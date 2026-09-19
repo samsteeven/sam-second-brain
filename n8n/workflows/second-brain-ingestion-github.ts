@@ -1,12 +1,9 @@
-import { workflow, trigger, node, vectorStore, embedding, documentLoader, textSplitter, splitInBatches, nextBatch, newCredential, expr } from '@n8n/workflow-sdk';
+import { workflow, trigger, node, vectorStore, embedding, documentLoader, textSplitter, newCredential, expr } from '@n8n/workflow-sdk';
 
 const schedule = trigger({
   type: 'n8n-nodes-base.scheduleTrigger',
   version: 1.3,
-  config: {
-    name: 'Toutes les 30 min',
-    parameters: { rule: { interval: [{ field: 'minutes', minutesInterval: 30 }] } },
-  },
+  config: { name: 'Toutes les 30 min', parameters: { rule: { interval: [{ field: 'minutes', minutesInterval: 30 }] } } },
   output: [{}],
 });
 
@@ -42,9 +39,9 @@ const httpTree = node({
       genericAuthType: 'httpBearerAuth',
       options: { response: { response: { neverError: true } } },
     },
-    credentials: { httpBearerAuth: newCredential('GitHub token') },
+    credentials: { httpBearerAuth: newCredential('Bearer Auth account') },
   },
-  output: [{ tree: [{ path: '01-Identity/About-Me.md', type: 'blob' }, { path: '03-Projects/EasyPharma.md', type: 'blob' }] }],
+  output: [{ tree: [{ path: '01-Identity/About-Me.md', type: 'blob' }] }],
 });
 
 const codeFiles = node({
@@ -63,7 +60,7 @@ const codeFiles = node({
         'return files.map((path) => ({ json: { path } }));',
     },
   },
-  output: [{ path: '01-Identity/About-Me.md' }, { path: '03-Projects/EasyPharma.md' }],
+  output: [{ path: '01-Identity/About-Me.md' }],
 });
 
 const httpContent = node({
@@ -77,7 +74,7 @@ const httpContent = node({
       authentication: 'genericCredentialType',
       genericAuthType: 'httpBearerAuth',
     },
-    credentials: { httpBearerAuth: newCredential('GitHub token') },
+    credentials: { httpBearerAuth: newCredential('Bearer Auth account') },
   },
   output: [{ path: '01-Identity/About-Me.md', name: 'About-Me.md', content: 'IyBBYm91dCBNZQo=' }],
 });
@@ -88,18 +85,23 @@ const codeDecode = node({
   config: {
     name: 'Décoder + métadonnées',
     parameters: {
-      mode: 'runOnceForEachItem',
+      mode: 'runOnceForAllItems',
       language: 'javaScript',
-      jsCode: 'const content = Buffer.from($json.content, "base64").toString("utf8");\n' +
-        'let category = "knowledge"; let tags = ""; let status = "";\n' +
-        'const m = content.match(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---/);\n' +
-        'if (m) {\n' +
-        '  const fm = m[1];\n' +
-        '  const t = fm.match(/^type:\\s*([\\w-]+)/m); if (t) category = t[1];\n' +
-        '  const ta = fm.match(/^tags:\\s*\\[(.*?)\\]/m); if (ta) tags = ta[1];\n' +
-        '  const s = fm.match(/^status:\\s*([\\w-]+)/m); if (s) status = s[1];\n' +
+      jsCode: 'const out = [];\n' +
+        'for (const it of $input.all()) {\n' +
+        '  const content = Buffer.from(it.json.content, "base64").toString("utf8");\n' +
+        '  let category = "knowledge"; let tags = ""; let status = "";\n' +
+        '  const m = content.match(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---/);\n' +
+        '  if (m) {\n' +
+        '    const fm = m[1];\n' +
+        '    const t = fm.match(/^type:\\s*([\\w-]+)/m); if (t) category = t[1];\n' +
+        '    const ta = fm.match(/^tags:\\s*\\[(.*?)\\]/m); if (ta) tags = ta[1];\n' +
+        '    const s = fm.match(/^status:\\s*([\\w-]+)/m); if (s) status = s[1];\n' +
+        '  }\n' +
+        '  if (status === "pending") continue;\n' +
+        '  out.push({ json: { text: content, file: it.json.path, category, tags, status } });\n' +
         '}\n' +
-        'return { json: { text: content, file: $json.path, category, tags, status } };',
+        'return out;',
     },
   },
   output: [{ text: '# About Me', file: '01-Identity/About-Me.md', category: 'identity', tags: 'profil', status: 'active' }],
@@ -108,10 +110,7 @@ const codeDecode = node({
 const splitter = textSplitter({
   type: '@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter',
   version: 1,
-  config: {
-    name: 'Splitter Markdown',
-    parameters: { chunkSize: 800, chunkOverlap: 100, options: { splitCode: 'markdown' } },
-  },
+  config: { name: 'Splitter Markdown', parameters: { chunkSize: 800, chunkOverlap: 100, options: { splitCode: 'markdown' } } },
 });
 
 const loader = documentLoader({
@@ -124,15 +123,7 @@ const loader = documentLoader({
       jsonMode: 'expressionData',
       jsonData: expr('{{ $json.text }}'),
       textSplittingMode: 'custom',
-      options: {
-        metadata: {
-          metadataValues: [
-            { name: 'file', value: expr('{{ $json.file }}') },
-            { name: 'category', value: expr('{{ $json.category }}') },
-            { name: 'tags', value: expr('{{ $json.tags }}') },
-          ],
-        },
-      },
+      options: { metadata: { metadataValues: [{ name: 'file', value: expr('{{ $json.file }}') }, { name: 'category', value: expr('{{ $json.category }}') }, { name: 'tags', value: expr('{{ $json.tags }}') }] } },
     },
     subnodes: { textSplitter: splitter },
   },
@@ -141,11 +132,7 @@ const loader = documentLoader({
 const embeddings = embedding({
   type: '@n8n/n8n-nodes-langchain.embeddingsOllama',
   version: 1,
-  config: {
-    name: 'Ollama Embeddings',
-    parameters: { model: 'bge-m3' },
-    credentials: { ollamaApi: newCredential('Ollama') },
-  },
+  config: { name: 'Ollama Embeddings', parameters: { model: 'bge-m3' }, credentials: { ollamaApi: newCredential('Ollama account') } },
 });
 
 const qdrantStore = vectorStore({
@@ -154,19 +141,16 @@ const qdrantStore = vectorStore({
   config: {
     name: 'Qdrant — Indexer',
     parameters: { mode: 'insert', qdrantCollection: { __rl: true, mode: 'id', value: 'knowledge_base' } },
-    credentials: { qdrantApi: newCredential('Qdrant') },
+    credentials: { qdrantApi: newCredential('Qdrant account') },
     subnodes: { embedding: embeddings, documentLoader: loader },
   },
 });
-
-const sib = splitInBatches({ version: 3, config: { name: 'Pour chaque note', parameters: { batchSize: 1 } } });
 
 export default workflow('sam-second-brain-ingestion-github', 'Second Brain — Ingestion (GitHub)')
   .add(schedule)
   .to(httpClear)
   .to(httpTree)
   .to(codeFiles)
-  .to(sib
-    .onDone(qdrantStore)
-    .onEachBatch(httpContent.to(codeDecode).to(nextBatch(sib)))
-  );
+  .to(httpContent)
+  .to(codeDecode)
+  .to(qdrantStore);

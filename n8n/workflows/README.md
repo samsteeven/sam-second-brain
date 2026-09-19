@@ -19,15 +19,18 @@ GitHub — Arbre du vault (git trees recursive)
 Code — Filtrer les notes .md (hors .obsidian/templates)
         │
         ▼
-Pour chaque note (splitInBatches)
-        │   GitHub — Contenu (API, base64)
-        │   Code — Décoder + frontmatter (type/tags/status)
+GitHub — Contenu de la note (API, base64)   [un appel par note]
+        │
+        ▼
+Code — Décoder + frontmatter (type/tags/status)
+        │   ⚠️ exclut les notes `status: pending` (quarantaine)
         ▼
 Qdrant — Indexer (chunks 800 / overlap 100 → embeddings Ollama bge-m3 → insert)
 ```
 
-- **Workflow** : https://n8n.samensteeve.com/workflow/yzhue0OUIpyhqIUT
+- **Workflow** : https://n8n.samensteeve.com/workflow/OW8VnLftG984yErF
 - **Principe** : ré-indexation complète à chaque run (vide la collection puis re-remplit) → pas de doublons.
+- **Quarantaine** : les notes écrites par une IA (`second_brain_add`) arrivent avec `status: pending` → **jamais indexées** tant que tu ne les valides pas (passe `status` à `active` dans Obsidian/GitHub, ou supprime-les).
 - **Vault** : repo **privé** `samsteeven/sam-second-brain-vault` — aucune donnée publique.
 
 ### Flux d'édition (côté toi)
@@ -96,7 +99,7 @@ Second Brain — KB Query   Second Brain — Add Note
 
 - **Outils** :
   - `second_brain_ask` — répond depuis la base (projets, stack, CV, notes) avec sources.
-  - `second_brain_add` — ajoute une note markdown dans `99-Capture/` du vault privé, indexée à l'ingestion suivante. Arguments : `input` (contenu markdown), `title` (optionnel).
+  - `second_brain_add` — ajoute une note markdown dans `99-Capture/` du vault privé avec `status: pending`. **Elle n'est indexée qu'après validation humaine** (passe le statut à `active`). Arguments : `input` (contenu markdown), `title` (optionnel).
 - **Workflow MCP** : https://n8n.samensteeve.com/workflow/vsiodb4KRTTEVBju
 - **Sous-workflows** : KB Query (`dWn9Dm1dvc5Qi13H`) · Add Note (`0M0WNrS3KtBYrD3U`)
 - **URL MCP (production)** : `https://n8n.samensteeve.com/mcp/second-brain-kb`
@@ -113,8 +116,9 @@ Second Brain — KB Query   Second Brain — Add Note
 
 ### Sécurité
 
-- Ce serveur n'expose **que** `second_brain_ask` (pas d'admin n8n).
+- Ce serveur n'expose **que** `second_brain_ask` et `second_brain_add` (pas d'admin n8n).
 - Le token est à toi : ne le partage pas (qui l'a = accès à tes notes).
+- **Validation des écritures IA** : `second_brain_add` écrit les notes en `status: pending` (quarantaine) → **jamais indexées** tant que tu ne les passes pas à `active`. Contre les prompt injections et le hors-contexte : le pire qu'une IA puisse faire est d'écrire une note en quarantaine, invisible et réversible (Git).
 
 ## Credentials requises
 
