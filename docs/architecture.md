@@ -48,9 +48,10 @@
 
 ## Flux d'ingestion (Workflow 1)
 
-1. **Déclencheur** : manuel (dev/test) + schedule (ex. toutes les 30 min).
-2. **Lecture des notes** : via Git (clone du vault dans un dossier local de n8n) ou lecture directe du dossier Obsidian.
-3. **Chunking** : découpage par sections Markdown (titres `##`) avec recouvrement léger, pour que chaque chunk soit autonome.
+1. **Déclencheur** : schedule toutes les 30 min.
+2. **Vidage Qdrant** : la collection `knowledge_base` est vidée à chaque run (anti-doublons).
+3. **Lecture des notes** : API GitHub (repo **privé** `sam-second-brain-vault`) — arbre git récursif puis contenu de chaque note `.md`.
+4. **Chunking** : découpage par sections Markdown (titres `##`) avec recouvrement léger, pour que chaque chunk soit autonome.
 4. **Embeddings** : `text-embedding-3-small` (1536 dimensions par défaut).
 5. **Upsert Qdrant** : chaque chunk est un point avec :
    ```json
@@ -102,9 +103,9 @@ Elles sont copiées dans le payload Qdrant → permet des recherches filtrées (
 
 | Composant | Emplacement | Raison |
 |---|---|---|
-| Obsidian vault | Local (`sam-second-brain-vault/`) | Confidentialité, contrôle |
-| Qdrant | Local (Docker) | Données sous contrôle, zéro coût |
-| n8n | Instance existante | Déjà en place |
+| Obsidian vault | Local (`sam-second-brain-vault/`) + **repo GitHub privé** | Confidentialité + sync automatique (mobile inclus) |
+| Qdrant | VPS (Docker), avec n8n | Données sous contrôle, accessible 24/7 |
+| n8n | VPS | Ordonnance l'ingestion et l'interrogation |
 | OpenAI API | Cloud | Aucun stockage de données : les contenus ne servent qu'à l'inférence |
 
 ## Extensions prévues (post-V1)
