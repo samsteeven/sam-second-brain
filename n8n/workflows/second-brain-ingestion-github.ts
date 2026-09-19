@@ -119,7 +119,21 @@ const loader = documentLoader({
   version: 1.1,
   config: {
     name: 'Charger les notes',
-    parameters: { dataType: 'json', jsonMode: 'allInputData', textSplittingMode: 'custom' },
+    parameters: {
+      dataType: 'json',
+      jsonMode: 'expressionData',
+      jsonData: expr('{{ $json.text }}'),
+      textSplittingMode: 'custom',
+      options: {
+        metadata: {
+          metadataValues: [
+            { name: 'file', value: expr('{{ $json.file }}') },
+            { name: 'category', value: expr('{{ $json.category }}') },
+            { name: 'tags', value: expr('{{ $json.tags }}') },
+          ],
+        },
+      },
+    },
     subnodes: { textSplitter: splitter },
   },
 });

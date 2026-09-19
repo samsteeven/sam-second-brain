@@ -89,7 +89,7 @@ const openRouterModel = languageModel({
   config: {
     name: 'OpenRouter Chat Model',
     parameters: {
-      model: 'openai/gpt-4.1-mini',
+      model: 'deepseek/deepseek-v4-flash-vision-exp',
       options: { temperature: 0.2 },
     },
     credentials: { openRouterApi: newCredential('OpenRouter account') },
