@@ -83,16 +83,17 @@ const buildContext = node({
   output: [{ context: '[03-Projects/MonProjet.md]\n## Mon projet\nContenu...', question: 'Quels sont mes projets Java Spring Boot ?' }],
 });
 
-const openRouterModel = languageModel({
-  type: '@n8n/n8n-nodes-langchain.lmChatOpenRouter',
-  version: 1,
+const chatModel = languageModel({
+  type: '@n8n/n8n-nodes-langchain.lmChatOpenAi',
+  version: 1.3,
   config: {
-    name: 'OpenRouter Chat Model',
+    name: 'OpenCode Chat Model',
     parameters: {
-      model: 'deepseek/deepseek-v4-flash-vision-exp',
-      options: { temperature: 0.2 },
+      model: { __rl: true, mode: 'id', value: 'deepseek/deepseek-v4-flash' },
+      responsesApiEnabled: false,
+      options: { baseURL: 'https://go.fastrouter.ai/api/v1', temperature: 0.2 },
     },
-    credentials: { openRouterApi: newCredential('OpenRouter account') },
+    credentials: { openAiApi: newCredential('OpenCode Go') },
   },
 });
 
@@ -105,7 +106,7 @@ const llm = node({
       promptType: 'define',
       text: expr('Tu es l\'assistant personnel de Sam. Réponds UNIQUEMENT à partir du CONTEXT fourni ci-dessous. Si l\'information n\'y est pas, dis-le clairement plutôt que d\'inventer. Cite les fichiers sources entre crochets, ex. [03-Projects/TribuneJustice.md].\n\nCONTEXT :\n{{ $json.context }}\n\nQUESTION : {{ $json.question }}'),
     },
-    subnodes: { model: openRouterModel },
+    subnodes: { model: chatModel },
   },
   output: [{ output: 'D\'après tes notes, tu as développé EasyPharma en Spring Boot [03-Projects/EasyPharma.md].' }],
 });

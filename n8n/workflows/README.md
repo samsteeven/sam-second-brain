@@ -56,7 +56,7 @@ Qdrant Search (topK 8, collection: knowledge_base)
 Contexte + Question (sources citées)
         │
         ▼
-OpenRouter Chat Model (openai/gpt-4.1-mini, température 0.2)
+OpenCode Chat Model (deepseek/deepseek-v4-flash — passerelle OpenCode Go)
         │
         ▼
 Réponse JSON { answer, sources }
@@ -78,10 +78,18 @@ Réponse JSON { answer, sources }
 | Credential n8n | Type | État | Rôle |
 |---|---|---|---|
 | **Ollama** | ollamaApi | ❌ **À créer** | Embeddings locaux (base URL `http://ollama:11434`) |
-| OpenRouter account | openRouterApi | ✅ Existe | Génération (chat) |
+| **OpenCode Go** | openAiApi | ❌ **À créer** | Génération (chat) — base URL `https://go.fastrouter.ai/api/v1`, clé `opencode-go` |
 | Header Auth account | httpHeaderAuth | ✅ Existe | Auth webhook Ask (header `n8n-webhook-secret`) |
 | **GitHub token** | httpBearerAuth | ✅ Existe (« Bearer Auth account ») | Lecture API GitHub (repo privé) |
 | **Qdrant account** | qdrantApi | ✅ Existe | Upsert + Search |
+
+### Créer la credential « OpenCode Go »
+
+1. Dans n8n : **Credentials → Add → OpenAI** (type OpenAI — la passerelle est OpenAI-compatible)
+   - Name : `OpenCode Go`
+   - API Key : ta clé `opencode-go` (celle d'opencode, dans `auth.json`)
+   - Base URL : laisser vide (le nœud force `https://go.fastrouter.ai/api/v1`)
+2. Rattache-la au nœud **« OpenCode Chat Model »** du workflow Ask.
 
 ### Créer la credential « Ollama »
 
@@ -100,6 +108,7 @@ Host `http://qdrant:6333`, port `6333`, collection `knowledge_base`.
 
 ## FAQ
 
-- **Pourquoi des embeddings locaux ?** Pas de clé OpenAI, et confidentialité : l'indexation des notes reste sur le VPS (voir `docs/decisions/ADR-003-embeddings-locaux-ollama.md`).
+- **Pourquoi des embeddings locaux ?** Pas de clé API supplémentaire, et confidentialité : l'indexation des notes reste sur le VPS (voir `docs/decisions/ADR-003-embeddings-locaux-ollama.md`).
+- **Modèle de chat** : `deepseek/deepseek-v4-flash` via la passerelle **OpenCode Go** (`go.fastrouter.ai/api/v1`), la même que celle utilisée par opencode.
 - **Dimension de la collection** : 1024 (bge-m3). Ne pas changer de modèle d'embeddings sans ré-indexer.
 - **L'ancien workflow « webhook ingestion »** a été archivé ; `obsidian/sync.ps1` reste un fallback manuel.
