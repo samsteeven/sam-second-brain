@@ -52,8 +52,11 @@ sam-second-brain/
 │   ├── security.md              # Secrets, confidentialité, isolation
 │   └── decisions/               # ADR — décisions d'ingénierie documentées
 │       ├── ADR-001-qdrant.md
-│       ├── ADR-002-openai.md
-│       └── ADR-003-embeddings-locaux-ollama.md
+│       ├── ADR-002-openai.md              # SUPERSÉDÉ (historique)
+│       ├── ADR-003-embeddings-locaux-ollama.md
+│       ├── ADR-004-opencode-go-generation.md
+│       ├── ADR-005-mcp-dedie.md
+│       └── ADR-006-validation-humaine-ecritures-ia.md
 ├── infrastructure/
 │   └── docker/
 │       └── docker-compose.yml   # Qdrant
@@ -71,16 +74,31 @@ sam-second-brain/
 
 1. **Qdrant** : le lancer sur le VPS — `docker compose -f infrastructure/docker/docker-compose.yml up -d`
 2. **Vault** : ouvrir `sam-second-brain-vault/` dans Obsidian ; les modifications sont pushées sur le repo **privé** `sam-second-brain-vault`.
-3. **n8n** : les workflows « Ingestion (GitHub) » et « Ask » sont déjà créés. Créer les credentials **« GitHub token »** (Bearer, accès Contents:Read au repo privé) et **« Qdrant »** (host/port/collection).
-4. Poser une question au webhook de réponse et obtenir une réponse contextuelle.
+3. **n8n** : les workflows sont déjà créés et actifs (Ingestion, KB Query, Add Note, MCP Server). Les credentials nécessaires : Ollama, OpenCode Go, GitHub (Contents: Read+Write), Qdrant, MCP Second Brain — voir `n8n/workflows/README.md`.
+4. **Brancher une IA** : ajouter un serveur MCP avec l'URL `https://n8n.samensteeve.com/mcp/second-brain-kb` + le token Bearer → l'IA découvre `second_brain_ask` et `second_brain_add`.
+
+## Décisions d'ingénierie
+
+Chaque choix structurant est documenté dans `docs/decisions/` (ADR) :
+
+| Décision | ADR | Pourquoi |
+|---|---|---|
+| Qdrant (self-hosted) pour le vector store | ADR-001 | Données sous contrôle, métadonnées riches, intégration n8n |
+| ~~OpenAI~~ (abandonné) | ADR-002 | Historique — pas de clé, pas de fonds |
+| Embeddings locaux Ollama `bge-m3` | ADR-003 | Multilingue FR, zéro coût API, confidentialité |
+| Génération via OpenCode Go (DeepSeek V4 Flash Vision) | ADR-004 | Réutilise la clé opencode existante, modèle vision |
+| Serveur MCP dédié (scoped) | ADR-005 | Expose uniquement lecture + écriture, pas l'admin n8n |
+| Validation humaine des écritures IA (quarantaine) | ADR-006 | Anti prompt-injection : rien n'entre sans validation |
 
 ## Feuille de route
 
 - [x] Conception V1 (architecture, ADR)
 - [x] Infrastructure Docker (Qdrant)
 - [x] Templates Obsidian
-- [x] Workflow n8n — Ingestion (repo GitHub privé, schedule 30 min)
-- [x] Workflow n8n — Ask (webhook → Qdrant → GPT)
+- [x] Workflow n8n — Ingestion (repo GitHub privé, schedule 30 min, notes pending exclues)
+- [x] Workflow n8n — Ask / KB Query (Ollama → Qdrant → DeepSeek V4 Flash Vision)
+- [x] Serveur MCP dédié (lecture + écriture, validation humaine des écritures IA)
+- [x] Quarantaine : les notes écrites par IA sont `pending` jusqu'à validation
 - [ ] Interface chat (Telegram / WhatsApp)
 - [ ] Capture automatique (veille, idées)
 - [ ] Article LinkedIn + documentation publique

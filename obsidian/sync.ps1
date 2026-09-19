@@ -1,3 +1,7 @@
+# ⚠️ OBSOLÈTE — depuis la bascule en ingestion par repo GitHub privé (option B),
+# ce script de push webhook n'est plus utilisé. L'ingestion lit directement le repo
+# privé `sam-second-brain-vault` toutes les 30 min. Conserver uniquement comme référence.
+
 # Sync Second Brain — envoie les notes Obsidian vers le workflow n8n d'ingestion
 # Usage :  powershell -File sync.ps1
 # Option : powershell -File sync.ps1 -VaultDir "D:\Documents\sam-second-brain-vault"

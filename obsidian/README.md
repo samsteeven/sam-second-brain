@@ -48,6 +48,18 @@ sam-second-brain-vault/
 4. **Versionner** : le vault est un dépôt git local. Chaque note créée/modifiée → commit. (Push vers un repo **privé** si besoin.)
 5. **Pour les documents lourds** (PDF, rapports) : pas dans le vault — ailleurs, avec un lien `[[...]]` ou une référence dans la note.
 
+## Validation des notes ajoutées par une IA
+
+Quand une IA branchée au MCP appelle `second_brain_add`, la note arrive dans **`99-Capture/`** avec **`status: pending`**. Elle n'est **jamais indexée** tant que tu ne la valides pas :
+
+1. Ouvre la note (`99-Capture/...md`) dans Obsidian (ou GitHub).
+2. Lis le contenu :
+   - **Si c'est bon** → change `status: pending` en `status: active` → elle sera indexée à l'ingestion suivante.
+   - **Si ce n'est pas bon** → supprime la note (ou change `status` en autre chose que `active`).
+3. Committe + push (le vault se sync via git).
+
+> C'est le garde-fou anti prompt-injection : une IA ne peut jamais polluer ta base interrogeable sans ton accord.
+
 ## Mise en place
 
 ```bash

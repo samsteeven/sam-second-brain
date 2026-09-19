@@ -1,6 +1,6 @@
 # ADR-002 — OpenAI pour embeddings et LLM
 
-- **Statut** : Accepté (2026-09-19)
+- **Statut** : **SUPERSÉDÉ** — remplacé par **ADR-003** (embeddings Ollama bge-m3) et **ADR-004** (génération via OpenCode Go). Conservé pour l'historique des décisions.
 - **Décideur** : Samen Steeve
 
 ## Contexte
