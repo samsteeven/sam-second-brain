@@ -18,7 +18,7 @@ const httpClear = node({
     executeOnce: true,
     parameters: {
       method: 'POST',
-      url: 'http://localhost:6333/collections/knowledge_base/points/delete',
+      url: 'http://qdrant:6333/collections/knowledge_base/points/delete',
       authentication: 'none',
       sendBody: true,
       contentType: 'json',
