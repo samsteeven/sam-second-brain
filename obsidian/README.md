@@ -2,7 +2,7 @@
 
 ## Où est le vault ?
 
-Le vault personnel vit **localement** dans `D:\Documents\sam-second-brain-vault\` — **il n'est pas publié** (repo public interdit pour les données personnelles). Ce dossier `obsidian/` du repo ne contient que les **templates** et **exemples** partageables.
+Le vault personnel vit **localement** dans `D:\Documents\sam-second-brain-vault\` et est synchronisé sur le repo **privé** `samsteeven/sam-second-brain-vault` (jamais public). Ce dossier `obsidian/` du repo public ne contient que les **templates** et **exemples** partageables.
 
 ## Arborescence du vault
 

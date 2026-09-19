@@ -36,12 +36,12 @@ const normalize = node({
 });
 
 const embeddings = embedding({
-  type: '@n8n/n8n-nodes-langchain.embeddingsOpenAi',
+  type: '@n8n/n8n-nodes-langchain.embeddingsOllama',
   version: 1,
   config: {
-    name: 'OpenAI Embeddings',
-    parameters: { model: 'text-embedding-3-small' },
-    credentials: { openAiApi: newCredential('OpenAI account') },
+    name: 'Ollama Embeddings',
+    parameters: { model: 'bge-m3' },
+    credentials: { ollamaApi: newCredential('Ollama') },
   },
 });
 
@@ -83,16 +83,16 @@ const buildContext = node({
   output: [{ context: '[03-Projects/MonProjet.md]\n## Mon projet\nContenu...', question: 'Quels sont mes projets Java Spring Boot ?' }],
 });
 
-const openAiModel = languageModel({
-  type: '@n8n/n8n-nodes-langchain.lmChatOpenAi',
-  version: 1.3,
+const openRouterModel = languageModel({
+  type: '@n8n/n8n-nodes-langchain.lmChatOpenRouter',
+  version: 1,
   config: {
-    name: 'OpenAI Chat Model',
+    name: 'OpenRouter Chat Model',
     parameters: {
-      model: { __rl: true, mode: 'list', value: 'gpt-5-mini' },
+      model: 'openai/gpt-4.1-mini',
       options: { temperature: 0.2 },
     },
-    credentials: { openAiApi: newCredential('OpenAI account') },
+    credentials: { openRouterApi: newCredential('OpenRouter account') },
   },
 });
 
@@ -105,7 +105,7 @@ const llm = node({
       promptType: 'define',
       text: expr('Tu es l\'assistant personnel de Sam. Réponds UNIQUEMENT à partir du CONTEXT fourni ci-dessous. Si l\'information n\'y est pas, dis-le clairement plutôt que d\'inventer. Cite les fichiers sources entre crochets, ex. [03-Projects/TribuneJustice.md].\n\nCONTEXT :\n{{ $json.context }}\n\nQUESTION : {{ $json.question }}'),
     },
-    subnodes: { model: openAiModel },
+    subnodes: { model: openRouterModel },
   },
   output: [{ output: 'D\'après tes notes, tu as développé EasyPharma en Spring Boot [03-Projects/EasyPharma.md].' }],
 });

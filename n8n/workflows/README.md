@@ -2,7 +2,7 @@
 
 Deux workflows sont créés dans l'instance n8n (https://n8n.samensteeve.com, projet personnel). Le code source de chaque workflow est versionné ici (`.ts`, SDK `@n8n/workflow-sdk`) pour être re-créé/modifié par code.
 
-## Workflow 1 — `Second Brain — Ingestion (GitHub)` ✅ actif
+## Workflow 1 — `Second Brain — Ingestion (GitHub)` ✅
 
 **Rôle** : re-indexe automatiquement le vault depuis le repo GitHub **privé** `samsteeven/sam-second-brain-vault`, toutes les 30 min.
 
@@ -23,7 +23,7 @@ Pour chaque note (splitInBatches)
         │   GitHub — Contenu (API, base64)
         │   Code — Décoder + frontmatter (type/tags/status)
         ▼
-Qdrant — Indexer (chunks 800 / overlap 100 → embeddings OpenAI → insert)
+Qdrant — Indexer (chunks 800 / overlap 100 → embeddings Ollama bge-m3 → insert)
 ```
 
 - **Workflow** : https://n8n.samensteeve.com/workflow/yzhue0OUIpyhqIUT
@@ -36,18 +36,18 @@ Qdrant — Indexer (chunks 800 / overlap 100 → embeddings OpenAI → insert)
 2. Committe + push vers le repo privé (`git add . && git commit -m "..." && git push`).
 3. n8n re-indexe automatiquement sous 30 min (ou manuellement dans n8n).
 
-## Workflow 2 — `Second Brain — Ask` ✅ actif
+## Workflow 2 — `Second Brain — Ask` ✅
 
 **Rôle** : répondre à une question à partir du contexte indexé.
 
 ```
-Webhook (POST /webhook/second-brain/ask, header auth)
+Webhook (POST, header auth)
         │
         ▼
 Normaliser la question
         │
         ▼
-OpenAI Embeddings (question)
+Ollama Embeddings (bge-m3) — embedding de la question
         │
         ▼
 Qdrant Search (topK 8, collection: knowledge_base)
@@ -56,20 +56,20 @@ Qdrant Search (topK 8, collection: knowledge_base)
 Contexte + Question (sources citées)
         │
         ▼
-OpenAI Chat Model (gpt-5-mini, température 0.2)
+OpenRouter Chat Model (openai/gpt-4.1-mini, température 0.2)
         │
         ▼
 Réponse JSON { answer, sources }
 ```
 
-- **URL** : `https://n8n.samensteeve.com/webhook/second-brain/ask`
-- **Authentification** : header de la credential **« Header Auth account »** — utilise le même header pour tes appels.
+- **URL de production** : `https://n8n.samensteeve.com/webhook/3bfad0e2-b19b-4557-a661-b35aed399acb/second-brain/ask`
+- **Authentification** : header **`n8n-webhook-secret`** (credential « Header Auth account ») — la valeur est celle configurée dans la credential.
 - **Workflow** : https://n8n.samensteeve.com/workflow/etuAL8GU7Impxbuz
 - **Exemple** :
   ```bash
-  curl -X POST https://n8n.samensteeve.com/webhook/second-brain/ask \
+  curl -X POST "https://n8n.samensteeve.com/webhook/3bfad0e2-b19b-4557-a661-b35aed399acb/second-brain/ask" \
     -H "Content-Type: application/json" \
-    -H "<header>: <valeur de ta credential Header Auth>" \
+    -H "n8n-webhook-secret: <valeur de ta credential Header Auth>" \
     -d '{"question": "Quels sont mes projets Java Spring Boot ?"}'
   ```
 
@@ -77,34 +77,29 @@ Réponse JSON { answer, sources }
 
 | Credential n8n | Type | État | Rôle |
 |---|---|---|---|
-| OpenAI account | openAiApi | ✅ Existe (auto-attribuée) | Embeddings + Chat |
-| Header Auth account | httpHeaderAuth | ✅ Existe (auto-attribuée) | Auth webhook Ask |
-| **GitHub token** | httpBearerAuth | ❌ **À créer** | Lecture API GitHub (repo privé) |
-| **Qdrant** | qdrantApi | ❌ **À créer** | Upsert + Search |
+| **Ollama** | ollamaApi | ❌ **À créer** | Embeddings locaux (base URL `http://ollama:11434`) |
+| OpenRouter account | openRouterApi | ✅ Existe | Génération (chat) |
+| Header Auth account | httpHeaderAuth | ✅ Existe | Auth webhook Ask (header `n8n-webhook-secret`) |
+| **GitHub token** | httpBearerAuth | ✅ Existe (« Bearer Auth account ») | Lecture API GitHub (repo privé) |
+| **Qdrant account** | qdrantApi | ✅ Existe | Upsert + Search |
 
-### 1. Créer la credential « GitHub token »
+### Créer la credential « Ollama »
 
-1. GitHub → Settings → Developer settings → **Personal access tokens → Fine-grained tokens** → Generate.
-   - Repository access : **Only select repositories** → `sam-second-brain-vault`
-   - Permissions → Contents : **Read** (et Metadata : Read, automatique)
-2. Dans n8n : **Credentials → Add → HTTP Request → Bearer Token Auth** (ou `HTTP Bearer Auth`)
-   - Name : `GitHub token`
-   - Token : `github_pat_...` (le token généré)
+1. Ollama est **déjà déployé** sur le VPS (conteneur `ollama`, réseau `n8n_n8n`) avec le modèle `bge-m3`.
+2. Dans n8n : **Credentials → Add → Ollama**
+   - Base URL : `http://ollama:11434`
+3. Rattache-la aux nœuds **« Ollama Embeddings »** (présents dans les deux workflows).
 
-### 2. Créer la credential « Qdrant »
+### GitHub token (rappel)
 
-Qdrant est **déjà déployé** sur le VPS (conteneur `qdrant`, réseau Docker `n8n_n8n` — celui de n8n, donc joignable en interne).
+Fine-grained PAT, accès **`sam-second-brain-vault`** en *Contents: Read*. Credential n8n de type *HTTP Bearer Auth*, champ = le token seul (sans `Bearer`).
 
-1. Dans n8n : **Credentials → Add → Qdrant**
-   - Host : `http://qdrant:6333`  ← le nom du conteneur sur le réseau de n8n
-   - Port : `6333`
-   - API Key : vide
-   - Collection : `knowledge_base`
+### Qdrant (rappel)
 
-> Déploiement actuel : `docker run -d --name qdrant --network n8n_n8n --restart unless-stopped -v qdrant_storage:/qdrant/storage -p 127.0.0.1:6333:6333 -p 127.0.0.1:6334:6334 qdrant/qdrant:v1.12.4`
-> Les ports ne sont publiés que sur `127.0.0.1` (aucune exposition publique). Le `docker-compose.yml` du repo reste une référence autonome pour un autre environnement.
+Host `http://qdrant:6333`, port `6333`, collection `knowledge_base`.
 
 ## FAQ
 
-- **Pourquoi un repo privé ?** Le vault contient des données personnelles. Le repo public `sam-second-brain` ne contient QUE du code, des templates et de la doc — jamais les notes.
-- **L'ancien workflow « webhook ingestion »** a été archivé (remplacé par la version GitHub). Le script `obsidian/sync.ps1` reste disponible comme fallback manuel si besoin.
+- **Pourquoi des embeddings locaux ?** Pas de clé OpenAI, et confidentialité : l'indexation des notes reste sur le VPS (voir `docs/decisions/ADR-003-embeddings-locaux-ollama.md`).
+- **Dimension de la collection** : 1024 (bge-m3). Ne pas changer de modèle d'embeddings sans ré-indexer.
+- **L'ancien workflow « webhook ingestion »** a été archivé ; `obsidian/sync.ps1` reste un fallback manuel.

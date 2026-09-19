@@ -125,12 +125,12 @@ const loader = documentLoader({
 });
 
 const embeddings = embedding({
-  type: '@n8n/n8n-nodes-langchain.embeddingsOpenAi',
+  type: '@n8n/n8n-nodes-langchain.embeddingsOllama',
   version: 1,
   config: {
-    name: 'OpenAI Embeddings',
-    parameters: { model: 'text-embedding-3-small' },
-    credentials: { openAiApi: newCredential('OpenAI account') },
+    name: 'Ollama Embeddings',
+    parameters: { model: 'bge-m3' },
+    credentials: { ollamaApi: newCredential('Ollama') },
   },
 });
 

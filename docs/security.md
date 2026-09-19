@@ -3,8 +3,8 @@
 ## Principes
 
 1. **Le vault personnel n'est jamais sur un repo public.** Il vit sur le repo **privé** `samsteeven/sam-second-brain-vault` (sync automatique vers Qdrant via n8n). Le repo public `sam-second-brain` ne contient que du code, des templates et de la documentation — **aucune note personnelle**.
-2. **Les secrets ne vont ni dans le repo, ni dans le vault.** La clé OpenAI, le token GitHub et la credential Qdrant vivent exclusivement dans les credentials n8n.
-3. **Aucune donnée personnelle n'est envoyée ailleurs que nécessaire** : les contenus partent vers l'API OpenAI pour l'inférence (embedding / génération) et vers Qdrant (VPS) — rien n'est stocké par des tiers. Le token GitHub ne donne accès qu'au repo privé du vault (permissions Contents : Read uniquement).
+2. **Les secrets ne vont ni dans le repo, ni dans le vault.** La clé OpenRouter, le token GitHub et la credential Qdrant vivent exclusivement dans les credentials n8n.
+3. **Aucune donnée personnelle n'est envoyée ailleurs que nécessaire** : l'indexation (embeddings) se fait **en local sur le VPS via Ollama** — les notes ne quittent pas le serveur. Seul le **contexte des questions** part vers OpenRouter pour la génération. Le token GitHub ne donne accès qu'au repo privé du vault (Contents: Read uniquement).
 
 ## Cartographie des données
 
@@ -12,9 +12,9 @@
 |---|---|---|
 | Note personnelle (vault) | Local + **repo GitHub privé** `sam-second-brain-vault` | Confidentialité — jamais de repo public |
 | Embeddings + textes chunkés | Qdrant (VPS) | Faible (VPS privé) |
-| Clé API OpenAI | Credential n8n | Critique — ne jamais la mettre en clair |
+| Clé API OpenRouter | Credential n8n | Critique — ne jamais la mettre en clair |
 | Token GitHub | Credential n8n (Bearer) | Critique — scope limité au repo du vault |
-| Question / réponses | Transit via n8n → OpenAI | Les questions peuvent contenir des infos perso — à garder en tête |
+| Question / réponses | Transit via n8n → OpenRouter | Les questions peuvent contenir des infos perso — à garder en tête |
 
 ## Règles concrètes
 

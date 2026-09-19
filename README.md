@@ -11,7 +11,7 @@
 ```
 ┌───────────────┐     ┌───────┐     ┌──────────────┐     ┌──────────┐     ┌──────┐
 │   OBSIDIAN    │────▶│  GIT  │────▶│     n8n      │────▶│  QDRANT  │────▶│ LLM  │
-│  source de    │ MD  │version│     │ ingestion /  │ vec │ vector   │ sem │OpenAI│
+│  source de    │ MD  │version│     │ ingestion /  │ vec │ vector   │ sem │OpenR.│
 │  vérité       │     │ing    │     │ chunking /   │     │ store    │search     │
 │               │     │       │     │ embeddings   │     │          │     │      │
 └───────────────┘     └───────┘     └──────────────┘     └──────────┘     └──────┘
@@ -38,8 +38,8 @@
 | Versioning | Git / GitHub | Historique, diff, n8n détecte les changements |
 | Orchestration | n8n | Workflows visuels, déjà utilisé dans mon écosystème |
 | Vector store | Qdrant (Docker) | Open-source, self-hosted, rapide, métadonnées riches |
-| Embeddings | OpenAI `text-embedding-3-small` | Standard RAG, qualité/prix optimal |
-| LLM | OpenAI `gpt-4o-mini` | Réponses rapides et économiques |
+| Embeddings | **Ollama `bge-m3`** (local, VPS) | Multilingue (FR), aucun coût API, notes non envoyées à un tiers |
+| LLM | **OpenRouter `openai/gpt-4.1-mini`** | Réponses rapides et économiques |
 | Interface | Webhook / Chat (n8n) | Simple, extensible (Telegram, WhatsApp…) |
 
 ## Structure du repo
@@ -52,7 +52,8 @@ sam-second-brain/
 │   ├── security.md              # Secrets, confidentialité, isolation
 │   └── decisions/               # ADR — décisions d'ingénierie documentées
 │       ├── ADR-001-qdrant.md
-│       └── ADR-002-openai.md
+│       ├── ADR-002-openai.md
+│       └── ADR-003-embeddings-locaux-ollama.md
 ├── infrastructure/
 │   └── docker/
 │       └── docker-compose.yml   # Qdrant
@@ -64,7 +65,7 @@ sam-second-brain/
 └── .gitignore
 ```
 
-> ⚠️ **Le vault personnel (mes données) n'est pas dans ce repo public.** Il vit localement dans `sam-second-brain-vault/` (voir `obsidian/README.md`).
+> ⚠️ **Le vault personnel (mes données) n'est pas dans ce repo public.** Il vit localement + sur le repo **privé** `samsteeven/sam-second-brain-vault` (voir `obsidian/README.md`).
 
 ## Démarrer
 

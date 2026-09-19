@@ -22,7 +22,7 @@
 │  Schedule / Manual Trigger                          │
 │  │  GitHub / Read Markdown files                    │
 │  │  Clean & Split (chunking)                        │
-│  │  Embeddings (OpenAI text-embedding-3-small)      │
+│  │  Embeddings (Ollama bge-m3, local)               │
 │  │  Upsert → Qdrant (avec métadonnées)              │
 │                                                     │
 │  WORKFLOW 2 — ASK                                  │
@@ -30,7 +30,7 @@
 │  │  Embedding de la question                        │
 │  │  Qdrant semantic search                          │
 │  │  Prompt (SYSTEM + CONTEXT)                       │
-│  │  LLM (gpt-4o-mini) → réponse                     │
+│  │  LLM (OpenRouter gpt-4.1-mini) → réponse          │
 └──────────────────────┬──────────────────────────────┘
                        │
                        ▼
@@ -42,7 +42,10 @@
                        │
                        ▼
               ┌──────────────┐
-              │  OPENAI      │  embeddings + chat completions
+              │  OLLAMA      │  embeddings locaux (bge-m3)
+              └──────────────┘
+              ┌──────────────┐
+              │  OPENROUTER  │  génération (chat)
               └──────────────┘
 ```
 
@@ -52,7 +55,7 @@
 2. **Vidage Qdrant** : la collection `knowledge_base` est vidée à chaque run (anti-doublons).
 3. **Lecture des notes** : API GitHub (repo **privé** `sam-second-brain-vault`) — arbre git récursif puis contenu de chaque note `.md`.
 4. **Chunking** : découpage par sections Markdown (titres `##`) avec recouvrement léger, pour que chaque chunk soit autonome.
-4. **Embeddings** : `text-embedding-3-small` (1536 dimensions par défaut).
+4. **Embeddings** : **Ollama `bge-m3`** (1024 dimensions, exécuté en local sur le VPS).
 5. **Upsert Qdrant** : chaque chunk est un point avec :
    ```json
    {
@@ -67,7 +70,7 @@
      }
    }
    ```
-6. **Idempotence** : `id` déterministe (slug du fichier + n° de chunk) → ré-ingestion sans doublons.
+6. **Idempotence** : la collection `knowledge_base` est vidée avant chaque ré-indexation → pas de doublons.
 
 ## Flux de question (Workflow 2)
 
@@ -84,7 +87,7 @@
    CONTEXT : [chunks pertinents]
    QUESTION : ...
    ```
-5. **Réponse** : `gpt-4o-mini`, température 0.2 (factuel).
+5. **Réponse** : OpenRouter `openai/gpt-4.1-mini`, température 0.2 (factuel).
 
 ## Métadonnées (frontmatter YAML dans Obsidian)
 
@@ -106,7 +109,8 @@ Elles sont copiées dans le payload Qdrant → permet des recherches filtrées (
 | Obsidian vault | Local (`sam-second-brain-vault/`) + **repo GitHub privé** | Confidentialité + sync automatique (mobile inclus) |
 | Qdrant | VPS (Docker), avec n8n | Données sous contrôle, accessible 24/7 |
 | n8n | VPS | Ordonnance l'ingestion et l'interrogation |
-| OpenAI API | Cloud | Aucun stockage de données : les contenus ne servent qu'à l'inférence |
+| Ollama (embeddings) | VPS (Docker) | Modèle local, aucune donnée envoyée pour l'indexation |
+| OpenRouter (génération) | Cloud | Aucun stockage : seul le contexte de la question est envoyé |
 
 ## Extensions prévues (post-V1)
 
