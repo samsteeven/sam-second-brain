@@ -120,6 +120,37 @@ Second Brain — KB Query   Second Brain — Add Note
 - Le token est à toi : ne le partage pas (qui l'a = accès à tes notes).
 - **Validation des écritures IA** : `second_brain_add` écrit les notes en `status: pending` (quarantaine) → **jamais indexées** tant que tu ne les passes pas à `active`. Contre les prompt injections et le hors-contexte : le pire qu'une IA puisse faire est d'écrire une note en quarantaine, invisible et réversible (Git).
 
+## Workflow 4 — `Second Brain — Housekeeping` ✅
+
+**Rôle** : détecte les **notes redondantes** dans la base et écrit un **rapport** en quarantaine, chaque semaine.
+
+```
+Schedule (dimanche 8h)
+        │
+        ▼
+GitHub — Arbre + Contenu (toutes les notes)
+        │
+        ▼
+Pour chaque note (splitInBatches)
+        │   Ollama — Embed (bge-m3)
+        │   Qdrant — Search (top 5, similarité)
+        │   Code — Candidat doublon (hors soi-même, > 70 %)
+        ▼
+Code — Construire le rapport (paires dédoublonnées)
+        │
+        ▼
+GitHub — Écrire le rapport → 99-Capture/housekeeping-<date>.md (status: pending)
+```
+
+- **Workflow** : https://n8n.samensteeve.com/workflow/IhNRKZe1WGnBEe5s
+- Le rapport est `status: pending` → **non indexé** ; tu le lis et tu valides/refuses.
+
+## Qualité du contenu (anti-redondance, anti-mal-classé)
+
+- **`second_brain_add` classe automatiquement** chaque note (type, tags, dossier cible) via une passe LLM (DeepSeek) — `06-Knowledge/…`, `03-Projects/…`, `05-Skills/…` selon le contenu.
+- **`second_brain_add` vérifie les doublons** avant d'écrire : similarité sémantique contre la base → refus si ≥ 75 %, avertissement si ≥ 55 %.
+- **Housekeeping** signale chaque semaine les paires redondantes existantes.
+
 ## Credentials requises
 
 | Credential n8n | Type | État | Rôle |

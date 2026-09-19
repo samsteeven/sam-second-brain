@@ -99,6 +99,9 @@ Chaque choix structurant est documenté dans `docs/decisions/` (ADR) :
 - [x] Workflow n8n — Ask / KB Query (Ollama → Qdrant → DeepSeek V4 Flash Vision)
 - [x] Serveur MCP dédié (lecture + écriture, validation humaine des écritures IA)
 - [x] Quarantaine : les notes écrites par IA sont `pending` jusqu'à validation
+- [x] Dédoublonnage à l'écriture (refus ≥ 75 %, avertissement ≥ 55 %)
+- [x] Classification automatique des notes IA (type, tags, dossier)
+- [x] Housekeeping hebdomadaire (rapport des notes redondantes)
 - [ ] Interface chat (Telegram / WhatsApp)
 - [ ] Capture automatique (veille, idées)
 - [ ] Article LinkedIn + documentation publique
