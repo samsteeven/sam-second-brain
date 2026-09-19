@@ -77,23 +77,28 @@ Réponse JSON { answer, sources }
     -d '{"question": "Quels sont mes projets Java Spring Boot ?"}'
   ```
 
-## Workflow 3 — `Second Brain — MCP Server` ✅ (scoped)
+## Workflow 3 — `Second Brain — MCP Server` ✅ (scoped, lecture + écriture)
 
-**Rôle** : expose la base de connaissances à **n'importe quelle IA compatible MCP** (ChatGPT, Claude, Cursor, opencode…) via un serveur MCP dédié — **uniquement** l'outil `second_brain_ask`, sans les outils d'administration n8n.
+**Rôle** : expose la base de connaissances à **n'importe quelle IA compatible MCP** (ChatGPT, Claude, Cursor, opencode…) via un serveur MCP dédié — **uniquement** les outils du second cerveau, sans les outils d'administration n8n.
 
 ```
 MCP Server Trigger (mcpTrigger, path: second-brain-kb, bearer auth)
-        │  ai_tool
-        ▼
-Custom Workflow Tool (second_brain_ask)
-        │  → exécute
-        ▼
-Second Brain — KB Query (sous-workflow RAG)
-  question → Ollama bge-m3 → Qdrant → DeepSeek V4 Flash Vision → { answer, sources }
+        │  ai_tool            │  ai_tool
+        ▼                     ▼
+second_brain_ask         second_brain_add
+  (lit la base)            (écrit une note)
+        │                     │
+        ▼                     ▼
+Second Brain — KB Query   Second Brain — Add Note
+ question → Ollama →      note markdown → GitHub
+ Qdrant → DeepSeek        (99-Capture/) → indexée
 ```
 
+- **Outils** :
+  - `second_brain_ask` — répond depuis la base (projets, stack, CV, notes) avec sources.
+  - `second_brain_add` — ajoute une note markdown dans `99-Capture/` du vault privé, indexée à l'ingestion suivante. Arguments : `input` (contenu markdown), `title` (optionnel).
 - **Workflow MCP** : https://n8n.samensteeve.com/workflow/vsiodb4KRTTEVBju
-- **Sous-workflow RAG** : https://n8n.samensteeve.com/workflow/dWn9Dm1dvc5Qi13H
+- **Sous-workflows** : KB Query (`dWn9Dm1dvc5Qi13H`) · Add Note (`0M0WNrS3KtBYrD3U`)
 - **URL MCP (production)** : `https://n8n.samensteeve.com/mcp/second-brain-kb`
 - **Auth** : `Bearer <token>` — credential « MCP Second Brain ».
 
@@ -117,10 +122,12 @@ Second Brain — KB Query (sous-workflow RAG)
 |---|---|---|---|
 | **Ollama** | ollamaApi | ✅ Existe | Embeddings locaux (base URL `http://ollama:11434`) |
 | **OpenCode Go** | httpBearerAuth (« Bearer Auth account 2 ») | ✅ Existe | Génération (chat) — clé `opencode-go` |
-| **MCP Second Brain** | httpBearerAuth | ❌ **À créer** | Auth du serveur MCP dédié (token au choix) |
+| **MCP Second Brain** | httpBearerAuth | ✅ Existe | Auth du serveur MCP dédié |
 | Header Auth account | httpHeaderAuth | ✅ Existe | Auth webhook Ask (header `n8n-webhook-secret`) |
-| **GitHub token** | httpBearerAuth (« Bearer Auth account ») | ✅ Existe | Lecture API GitHub (repo privé) |
+| **GitHub token** | httpBearerAuth (« Bearer Auth account ») | ✅ Existe — **Contents: Read + Write** | Lecture (ingestion) + écriture (second_brain_add) |
 | **Qdrant account** | qdrantApi | ✅ Existe | Upsert + Search |
+
+> ⚠️ Le token GitHub doit avoir **Contents: Read AND write** sur `sam-second-brain-vault` (nécessaire pour l'outil `second_brain_add`).
 
 ### Créer la credential « OpenCode Go »
 

@@ -21,7 +21,8 @@
 - `.gitignore` exclut tout fichier `*.env`, les dumps, et le vault local (`sam-second-brain-vault/`).
 - **Le push du vault se fait UNIQUEMENT sur le repo privé** `sam-second-brain-vault`.
 - Credentials n8n : utiliser les credentials n8n (stockées chiffrées), jamais de valeurs en dur dans les paramètres de nœuds.
-- Token GitHub : fine-grained, accès **Contents: Read** uniquement sur `sam-second-brain-vault`, jamais de scope écriture sur d'autres repos.
+- Token GitHub : fine-grained, accès **`sam-second-brain-vault`** en **Contents: Read AND write** (l'écriture est nécessaire pour l'outil MCP `second_brain_add`), jamais d'autres repos.
+- L'outil MCP `second_brain_add` écrit uniquement dans `99-Capture/` du vault — toute note ajoutée par une IA passe par le versioning Git (annulable).
 - Webhook de question : authentifié par header (credential « Header Auth account »).
 - La ré-indexation vide la collection Qdrant à chaque run → pas d'accumulation de données obsolètes.
 
