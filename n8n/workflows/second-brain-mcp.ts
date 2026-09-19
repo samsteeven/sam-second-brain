@@ -11,11 +11,6 @@ const kbTool = tool({
       source: 'database',
       workflowId: 'dWn9Dm1dvc5Qi13H',
       responsePropertyName: 'response',
-      fields: {
-        values: [
-          { name: 'question', type: 'stringValue', stringValue: fromAi('question', 'La question à poser à la base de connaissances personnelle') },
-        ],
-      },
     },
   },
 });

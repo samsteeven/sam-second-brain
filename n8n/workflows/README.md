@@ -94,7 +94,7 @@ Second Brain — KB Query (sous-workflow RAG)
 
 - **Workflow MCP** : https://n8n.samensteeve.com/workflow/vsiodb4KRTTEVBju
 - **Sous-workflow RAG** : https://n8n.samensteeve.com/workflow/dWn9Dm1dvc5Qi13H
-- **URL MCP** : `https://n8n.samensteeve.com/mcp-server/second-brain-kb` (production, après publication)
+- **URL MCP (production)** : `https://n8n.samensteeve.com/mcp/second-brain-kb`
 - **Auth** : `Bearer <token>` — credential « MCP Second Brain ».
 
 ### Brancher une IA
@@ -102,9 +102,9 @@ Second Brain — KB Query (sous-workflow RAG)
 1. Crée la credential **« MCP Second Brain »** (type *HTTP Bearer Auth*) avec un token que tu choisis (ex. généré par `openssl rand -hex 24`), et rattache-la au nœud **« MCP Server — Second Brain »** (⚠️ pas la credential « Bearer Auth account »).
 2. Publie le workflow **« Second Brain — MCP Server »** (n8n → active).
 3. Dans ton IA (ChatGPT / Claude Desktop / Cursor / opencode…) : ajoute un **serveur MCP**
-   - URL : `https://n8n.samensteeve.com/mcp-server/second-brain-kb`
+   - URL : `https://n8n.samensteeve.com/mcp/second-brain-kb`
    - Auth : Bearer avec ton token
-4. L'IA découvre l'outil **`second_brain_ask`** et interroge ta base de connaissances.
+4. L'IA découvre l'outil **`second_brain_ask`** (argument `input`/`query`) et interroge ta base de connaissances.
 
 ### Sécurité
 

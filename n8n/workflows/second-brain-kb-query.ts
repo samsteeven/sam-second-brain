@@ -6,11 +6,10 @@ const subTrigger = trigger({
   config: {
     name: 'Entrée (question)',
     parameters: {
-      inputSource: 'workflowInputs',
-      workflowInputs: { values: [{ name: 'question', type: 'string' }] },
+      inputSource: 'passthrough',
     },
   },
-  output: [{ question: 'Quels sont mes projets ?' }],
+  output: [{ query: 'Quels sont mes projets ?' }],
 });
 
 const normalize = node({
@@ -23,7 +22,7 @@ const normalize = node({
       includeOtherFields: true,
       assignments: {
         assignments: [
-          { id: 'question', name: 'question', value: expr('{{ $json.question ?? "" }}'), type: 'string' },
+          { id: 'question', name: 'question', value: expr('{{ $json.query ?? $json.input ?? $json.question ?? "" }}'), type: 'string' },
         ],
       },
     },
