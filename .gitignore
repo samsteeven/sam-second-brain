@@ -1,0 +1,27 @@
+# Secrets / fichiers locaux
+.env
+*.env
+.env.local
+.env.test
+
+# Vault personnel — JAMAIS publié
+sam-second-brain-vault/
+
+# Obsidian
+.obsidian/
+.trash/
+
+# Node
+node_modules/
+
+# Docker volumes / données
+*.db
+*.sqlite
+*.rdb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
