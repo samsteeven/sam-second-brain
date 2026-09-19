@@ -1,65 +1,99 @@
 # n8n — Workflows
 
-Deux workflows construisent le second cerveau. Ils sont créés dans l'instance n8n via l'API/SDK (voir le repo racine pour le code source de chaque workflow).
+Deux workflows sont créés dans l'instance n8n (https://n8n.samensteeve.com, projet personnel). Le code source de chaque workflow est versionné ici (`.ts`, SDK `@n8n/workflow-sdk`) pour être re-créé/modifié par code.
 
-## Workflow 1 — `second-brain-ingestion`
+## Workflow 1 — `Second Brain — Ingestion`
 
-**Rôle** : indexer les notes modifiées du vault dans Qdrant.
+**Rôle** : indexer les notes du vault dans Qdrant.
 
 ```
-Schedule / Manual Trigger
+Webhook (POST /webhook/second-brain/ingest)
         │
         ▼
-Read Markdown (dossier vault ou clone Git)
+Default Data Loader (JSON entrant)
         │
         ▼
-Clean & Split (chunking par sections)
+Splitter Markdown (chunks 800 / overlap 100)
         │
         ▼
 OpenAI Embeddings (text-embedding-3-small)
         │
         ▼
-Qdrant Upsert (collection: knowledge_base)
+Qdrant Insert (collection: knowledge_base)
 ```
 
-- **Déclencheur** : manuel (dev) + schedule (production, ex. toutes les 30 min).
-- **Idempotence** : `id` = slug du fichier + n° de chunk → pas de doublons à la ré-indexation.
-- **Payload** : `text`, `file`, `category` (depuis le frontmatter), `tags`, `updated_at`.
+- **URL** : `https://n8n.samensteeve.com/webhook/second-brain/ingest`
+- **Payload attendu** : tableau JSON d'objets `{ text, file, category, tags, status }`.
+- **Workflow** : https://n8n.samensteeve.com/workflow/PGv3RgcPM4AgWoFQ
+- **Déclenchement** : le script `obsidian/sync.ps1` (local) envoie les notes modifiées.
 
-## Workflow 2 — `second-brain-ask`
+## Workflow 2 — `Second Brain — Ask`
 
-**Rôle** : répondre à une question à partir du contexte du vault.
+**Rôle** : répondre à une question à partir du contexte indexé.
 
 ```
-Webhook / Chat Trigger
+Webhook (POST /webhook/second-brain/ask, header auth)
+        │
+        ▼
+Normaliser la question
         │
         ▼
 OpenAI Embeddings (question)
         │
         ▼
-Qdrant Search (top-K, filtre optionnel par catégorie/tags)
+Qdrant Search (topK 8, collection: knowledge_base)
         │
         ▼
-Prompt (SYSTEM + CONTEXT + QUESTION)
+Contexte + Question (sources citées)
         │
         ▼
-OpenAI gpt-4o-mini
+OpenAI Chat Model (gpt-5-mini, température 0.2)
         │
         ▼
-Réponse (avec sources citées)
+Réponse JSON { answer, sources }
 ```
 
-- **Authentification du webhook** : header `X-API-Key` si exposé publiquement.
-- **Garde-fou anti-hallucination** : le prompt impose « réponds UNIQUEMENT à partir du CONTEXT, sinon dis-le ».
+- **URL** : `https://n8n.samensteeve.com/webhook/second-brain/ask`
+- **Authentification** : header de la credential **« Header Auth account »** (déjà existante) — utilise le même header pour tes appels.
+- **Workflow** : https://n8n.samensteeve.com/workflow/etuAL8GU7Impxbuz
+- **Exemple** :
+  ```bash
+  curl -X POST https://n8n.samensteeve.com/webhook/second-brain/ask \
+    -H "Content-Type: application/json" \
+    -H "<header>: <valeur de ta credential Header Auth>" \
+    -d '{"question": "Quels sont mes projets Java Spring Boot ?"}'
+  ```
 
 ## Credentials requises
 
-| Credential n8n | Service | Rôle |
+| Credential n8n | État | Rôle |
 |---|---|---|
-| OpenAI | OpenAI | Embeddings + Chat completions |
-| Qdrant | Qdrant (http://localhost:6333) | Upsert + Search |
-| (Optionnel) GitHub | GitHub | Lecture du vault versionné |
+| OpenAI account | ✅ Existe (auto-attribuée) | Embeddings + Chat |
+| Header Auth account | ✅ Existe (auto-attribuée) | Auth du webhook Ask |
+| **Qdrant** | ❌ **À créer** | Upsert + Search |
 
-## Import manuel (si les workflows ne sont pas créés directement)
+### Créer la credential Qdrant
 
-Les exports JSON de chaque workflow peuvent être ré-importés via **Workflows → Import from File**.
+1. **Lancer Qdrant** là où n8n peut y accéder (ex. sur le serveur n8n) :
+   ```bash
+   docker compose -f infrastructure/docker/docker-compose.yml up -d
+   ```
+   (ou `docker run -d -p 6333:6333 -p 6334:6334 -v qdrant_storage:/qdrant/storage qdrant/qdrant`)
+2. Dans n8n : **Credentials → Add credential → Qdrant**
+   - Host : `http://localhost:6333` (ou IP du serveur)
+   - Port : `6333`
+   - API Key : vide (aucune configurée par défaut)
+   - Collection : `knowledge_base`
+
+## Usage
+
+```powershell
+# Indexer tout le vault (1er index)
+powershell -File D:\Documents\sam-second-brain-vault\..\sam-second-brain\obsidian\sync.ps1
+
+# Ou depuis le vault directement
+powershell -File obsidian\sync.ps1
+```
+
+> ⚠️ V1 : le sync envoie toutes les notes à chaque exécution (upsert). Une ré-indexation complète est sans risque mais réécrit les points — si tu veux repartir de zéro : vider la collection `knowledge_base` dans Qdrant puis relancer le sync.
+> ⚠️ Tant que la credential **Qdrant** n'existe pas, les deux workflows échouent à l'étape Qdrant.
