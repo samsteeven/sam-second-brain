@@ -56,18 +56,22 @@ Qdrant Search (topK 8, collection: knowledge_base)
 Contexte + Question (sources citées)
         │
         ▼
-OpenCode Chat Model (deepseek/deepseek-v4-flash — passerelle OpenCode Go)
+OpenCode Go — Chat (HTTP POST chat/completions)
+  deepseek-v4-flash-vision-exp · header x-opencode-session
+        │
+        ▼
+Extraire la réponse (Code)
         │
         ▼
 Réponse JSON { answer, sources }
 ```
 
-- **URL de production** : `https://n8n.samensteeve.com/webhook/3bfad0e2-b19b-4557-a661-b35aed399acb/second-brain/ask`
+- **URL de production** : `https://n8n.samensteeve.com/webhook/1b0e8559-8633-417a-93ba-33e65fc3ade6/second-brain/ask`
 - **Authentification** : header **`n8n-webhook-secret`** (credential « Header Auth account ») — la valeur est celle configurée dans la credential.
-- **Workflow** : https://n8n.samensteeve.com/workflow/etuAL8GU7Impxbuz
+- **Workflow** : https://n8n.samensteeve.com/workflow/aNIEqBj2T0CPZDYS
 - **Exemple** :
   ```bash
-  curl -X POST "https://n8n.samensteeve.com/webhook/3bfad0e2-b19b-4557-a661-b35aed399acb/second-brain/ask" \
+  curl -X POST "https://n8n.samensteeve.com/webhook/1b0e8559-8633-417a-93ba-33e65fc3ade6/second-brain/ask" \
     -H "Content-Type: application/json" \
     -H "n8n-webhook-secret: <valeur de ta credential Header Auth>" \
     -d '{"question": "Quels sont mes projets Java Spring Boot ?"}'
@@ -77,19 +81,20 @@ Réponse JSON { answer, sources }
 
 | Credential n8n | Type | État | Rôle |
 |---|---|---|---|
-| **Ollama** | ollamaApi | ❌ **À créer** | Embeddings locaux (base URL `http://ollama:11434`) |
-| **OpenCode Go** | openAiApi | ❌ **À créer** | Génération (chat) — base URL `https://go.fastrouter.ai/api/v1`, clé `opencode-go` |
+| **Ollama** | ollamaApi | ✅ Existe | Embeddings locaux (base URL `http://ollama:11434`) |
+| **OpenCode Go** | httpBearerAuth | ❌ **À créer** | Génération (chat) — clé `opencode-go`, passerelle `https://opencode.ai/zen/go/v1` |
 | Header Auth account | httpHeaderAuth | ✅ Existe | Auth webhook Ask (header `n8n-webhook-secret`) |
 | **GitHub token** | httpBearerAuth | ✅ Existe (« Bearer Auth account ») | Lecture API GitHub (repo privé) |
 | **Qdrant account** | qdrantApi | ✅ Existe | Upsert + Search |
 
 ### Créer la credential « OpenCode Go »
 
-1. Dans n8n : **Credentials → Add → OpenAI** (type OpenAI — la passerelle est OpenAI-compatible)
+1. Dans n8n : **Credentials → Add → HTTP Request → Bearer Auth**
    - Name : `OpenCode Go`
-   - API Key : ta clé `opencode-go` (celle d'opencode, dans `auth.json`)
-   - Base URL : laisser vide (le nœud force `https://go.fastrouter.ai/api/v1`)
-2. Rattache-la au nœud **« OpenCode Chat Model »** du workflow Ask.
+   - **Token** : ta clé `opencode-go` (celle d'opencode, dans `auth.json`)
+2. Rattache-la au nœud **« OpenCode Go — Chat »** du workflow Ask.
+
+> La passerelle OpenCode Go (`https://opencode.ai/zen/go/v1`) exige le header `x-opencode-session` — il est déjà configuré sur le nœud HTTP. Modèle : `deepseek-v4-flash-vision-exp`.
 
 ### Créer la credential « Ollama »
 
@@ -109,6 +114,6 @@ Host `http://qdrant:6333`, port `6333`, collection `knowledge_base`.
 ## FAQ
 
 - **Pourquoi des embeddings locaux ?** Pas de clé API supplémentaire, et confidentialité : l'indexation des notes reste sur le VPS (voir `docs/decisions/ADR-003-embeddings-locaux-ollama.md`).
-- **Modèle de chat** : `deepseek/deepseek-v4-flash` via la passerelle **OpenCode Go** (`go.fastrouter.ai/api/v1`), la même que celle utilisée par opencode.
+- **Modèle de chat** : `deepseek-v4-flash-vision-exp` via la passerelle **OpenCode Go** (`https://opencode.ai/zen/go/v1`), la même que celle utilisée par opencode (header `x-opencode-session` requis).
 - **Dimension de la collection** : 1024 (bge-m3). Ne pas changer de modèle d'embeddings sans ré-indexer.
 - **L'ancien workflow « webhook ingestion »** a été archivé ; `obsidian/sync.ps1` reste un fallback manuel.

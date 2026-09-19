@@ -1,4 +1,4 @@
-import { workflow, trigger, node, vectorStore, embedding, languageModel, newCredential, expr } from '@n8n/workflow-sdk';
+import { workflow, trigger, node, vectorStore, embedding, newCredential, expr } from '@n8n/workflow-sdk';
 
 const askWebhook = trigger({
   type: 'n8n-nodes-base.webhook',
@@ -41,7 +41,7 @@ const embeddings = embedding({
   config: {
     name: 'Ollama Embeddings',
     parameters: { model: 'bge-m3' },
-    credentials: { ollamaApi: newCredential('Ollama') },
+    credentials: { ollamaApi: newCredential('Ollama account') },
   },
 });
 
@@ -57,10 +57,10 @@ const qdrantSearch = vectorStore({
       topK: 8,
       includeDocumentMetadata: true,
     },
-    credentials: { qdrantApi: newCredential('Qdrant') },
+    credentials: { qdrantApi: newCredential('Qdrant account') },
     subnodes: { embedding: embeddings },
   },
-  output: [{ pageContent: '## Mon projet\nContenu...', metadata: { file: '03-Projects/MonProjet.md', category: 'projects' } }],
+  output: [{ document: { pageContent: '## Mon projet\nContenu...', metadata: { file: '03-Projects/MonProjet.md', category: 'projects' } } }],
 });
 
 const buildContext = node({
@@ -74,41 +74,58 @@ const buildContext = node({
       includeOtherFields: false,
       assignments: {
         assignments: [
-          { id: 'context', name: 'context', value: expr('{{ $("Qdrant — Recherche").all().map((d, i) => "[" + (d.json.metadata?.file ?? "source") + "]\\n" + (d.json.pageContent ?? "")).join("\\n\\n---\\n\\n") }}'), type: 'string' },
+          { id: 'context', name: 'context', value: expr('{{ $("Qdrant — Recherche").all().map((d) => "[" + (d.json.document?.metadata?.file ?? "source") + "]\\n" + (d.json.document?.pageContent ?? "")).join("\\n\\n---\\n\\n") }}'), type: 'string' },
           { id: 'question', name: 'question', value: expr('{{ $("Normaliser la question").item.json.question }}'), type: 'string' },
         ],
       },
     },
   },
-  output: [{ context: '[03-Projects/MonProjet.md]\n## Mon projet\nContenu...', question: 'Quels sont mes projets Java Spring Boot ?' }],
+  output: [{ context: '[01-Identity/About-Me.md]\n# About Me\n...', question: 'Quels sont mes projets ?' }],
 });
 
-const chatModel = languageModel({
-  type: '@n8n/n8n-nodes-langchain.lmChatOpenAi',
-  version: 1.3,
+const httpChat = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.3,
   config: {
-    name: 'OpenCode Chat Model',
+    name: 'OpenCode Go — Chat',
     parameters: {
-      model: { __rl: true, mode: 'id', value: 'deepseek/deepseek-v4-flash' },
-      responsesApiEnabled: false,
-      options: { baseURL: 'https://go.fastrouter.ai/api/v1', temperature: 0.2 },
+      method: 'POST',
+      url: 'https://opencode.ai/zen/go/v1/chat/completions',
+      authentication: 'genericCredentialType',
+      genericAuthType: 'httpBearerAuth',
+      sendHeaders: true,
+      specifyHeaders: 'keypair',
+      headerParameters: {
+        parameters: [
+          { name: 'Content-Type', value: 'application/json' },
+          { name: 'x-opencode-session', value: 'second-brain' },
+        ],
+      },
+      sendBody: true,
+      contentType: 'json',
+      specifyBody: 'json',
+      jsonBody: expr("={{ { model: \"deepseek-v4-flash-vision-exp\", temperature: 0.2, messages: [ { role: \"system\", content: \"Tu es l'assistant personnel de Sam. Réponds UNIQUEMENT à partir du CONTEXT fourni. Cite les fichiers sources entre crochets, ex. [01-Identity/About-Me.md]. Si l'information n'y est pas, dis-le clairement.\\n\\nCONTEXT :\\n\" + $json.context }, { role: \"user\", content: $json.question } ] } }}"),
+      options: { response: { response: { neverError: false } } },
     },
-    credentials: { openAiApi: newCredential('OpenCode Go') },
+    credentials: { httpBearerAuth: newCredential('OpenCode Go') },
   },
+  output: [{ choices: [{ message: { content: "D'après tes notes, tu as développé EasyPharma en Spring Boot [03-Projects/EasyPharma.md]." } }] }],
 });
 
-const llm = node({
-  type: '@n8n/n8n-nodes-langchain.chainLlm',
-  version: 1.9,
+const extract = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
   config: {
-    name: 'Réponse RAG',
+    name: 'Extraire la réponse',
     parameters: {
-      promptType: 'define',
-      text: expr('Tu es l\'assistant personnel de Sam. Réponds UNIQUEMENT à partir du CONTEXT fourni ci-dessous. Si l\'information n\'y est pas, dis-le clairement plutôt que d\'inventer. Cite les fichiers sources entre crochets, ex. [03-Projects/TribuneJustice.md].\n\nCONTEXT :\n{{ $json.context }}\n\nQUESTION : {{ $json.question }}'),
+      mode: 'runOnceForEachItem',
+      language: 'javaScript',
+      jsCode: 'const answer = $json.choices?.[0]?.message?.content ?? "Erreur : aucune réponse du modèle.";\n' +
+        'const sources = $("Qdrant — Recherche").all().map((d) => d.json.document?.metadata?.file).filter(Boolean);\n' +
+        'return { json: { answer, sources } };',
     },
-    subnodes: { model: chatModel },
   },
-  output: [{ output: 'D\'après tes notes, tu as développé EasyPharma en Spring Boot [03-Projects/EasyPharma.md].' }],
+  output: [{ answer: 'Réponse...', sources: ['03-Projects/EasyPharma.md'] }],
 });
 
 const respond = node({
@@ -118,7 +135,7 @@ const respond = node({
     name: 'Répondre au webhook',
     parameters: {
       respondWith: 'json',
-      responseBody: expr('={{ { answer: $json.output, sources: $("Qdrant — Recherche").all().map(d => d.json.metadata?.file).filter(Boolean) } }}'),
+      responseBody: expr('={{ { answer: $json.answer, sources: $json.sources } }}'),
     },
   },
   output: [{ answer: 'Réponse...', sources: ['03-Projects/EasyPharma.md'] }],
@@ -129,5 +146,6 @@ export default workflow('sam-second-brain-ask', 'Second Brain — Ask')
   .to(normalize)
   .to(qdrantSearch)
   .to(buildContext)
-  .to(llm)
+  .to(httpChat)
+  .to(extract)
   .to(respond);
