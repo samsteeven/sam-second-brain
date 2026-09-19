@@ -93,17 +93,16 @@ Réponse JSON { answer, sources }
 
 ### 2. Créer la credential « Qdrant »
 
-1. **Lancer Qdrant** sur le VPS (là où n8n peut y accéder) :
-   ```bash
-   mkdir -p second-brain && cd second-brain
-   curl -o docker-compose.yml https://raw.githubusercontent.com/samsteeven/sam-second-brain/main/infrastructure/docker/docker-compose.yml
-   docker compose up -d
-   ```
-2. Dans n8n : **Credentials → Add → Qdrant**
-   - Host : `http://localhost:6333` (ou IP du serveur)
+Qdrant est **déjà déployé** sur le VPS (conteneur `qdrant`, réseau Docker `n8n_n8n` — celui de n8n, donc joignable en interne).
+
+1. Dans n8n : **Credentials → Add → Qdrant**
+   - Host : `http://qdrant:6333`  ← le nom du conteneur sur le réseau de n8n
    - Port : `6333`
    - API Key : vide
    - Collection : `knowledge_base`
+
+> Déploiement actuel : `docker run -d --name qdrant --network n8n_n8n --restart unless-stopped -v qdrant_storage:/qdrant/storage -p 127.0.0.1:6333:6333 -p 127.0.0.1:6334:6334 qdrant/qdrant:v1.12.4`
+> Les ports ne sont publiés que sur `127.0.0.1` (aucune exposition publique). Le `docker-compose.yml` du repo reste une référence autonome pour un autre environnement.
 
 ## FAQ
 
