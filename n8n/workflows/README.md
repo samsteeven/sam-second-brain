@@ -94,7 +94,7 @@ Réponse JSON { answer, sources }
 **Rôle** : expose la base de connaissances à **n'importe quelle IA compatible MCP** (ChatGPT, Claude, Cursor, opencode…) via un serveur MCP dédié — **uniquement** les outils du second cerveau, sans les outils d'administration n8n.
 
 ```
-MCP Server Trigger (mcpTrigger, path: second-brain-kb, bearer auth)
+MCP Server Trigger (mcpTrigger, path: second-brain-kb, OAuth n8n)
         │ ai_tool              │ ai_tool              │ ai_tool
         ▼                      ▼                      ▼
 second_brain_ask        second_brain_add      second_brain_project_details
@@ -131,16 +131,18 @@ Garanties :
 - **Workflow MCP** : https://n8n.samensteeve.com/workflow/vsiodb4KRTTEVBju
 - **Sous-workflows** : KB Query (`dWn9Dm1dvc5Qi13H`) · Add Note (`MzpwDShhgx4nte2U`) · Project Details (`CNBjukh9nqhGDPbc`)
 - **URL MCP (production)** : `https://n8n.samensteeve.com/mcp/second-brain-kb`
-- **Auth** : `Bearer <token>` — credential « MCP Second Brain ».
+- **Auth** : **OAuth n8n** (`n8nOAuth2`) — auto-découverte via `.well-known` (`oauth-protected-resource` → `oauth-authorization-server`). Plus de token statique. L'ancienne credential « MCP Second Brain » n'est plus utilisée.
 
 ### Brancher une IA
 
-1. Crée la credential **« MCP Second Brain »** (type *HTTP Bearer Auth*) avec un token que tu choisis (ex. généré par `openssl rand -hex 24`), et rattache-la au nœud **« MCP Server — Second Brain »** (⚠️ pas la credential « Bearer Auth account »).
-2. Publie le workflow **« Second Brain — MCP Server »** (n8n → active).
-3. Dans ton IA (ChatGPT / Claude Desktop / Cursor / opencode…) : ajoute un **serveur MCP**
-   - URL : `https://n8n.samensteeve.com/mcp/second-brain-kb`
-   - Auth : Bearer avec ton token
-4. L'IA découvre les 3 outils (**`second_brain_ask`**, **`second_brain_add`**, **`second_brain_project_details`**) — argument `input`/`query` — et interroge ta base de connaissances.
+1. Publie le workflow **« Second Brain — MCP Server »** (n8n → active).
+2. Dans ton IA, ajoute un **serveur MCP** :
+   - **URL** : `https://n8n.samensteeve.com/mcp/second-brain-kb`
+   - **Auth** : **OAuth** (auto-découverte). Le client ouvre la page de connexion **n8n** → tu autorises → il obtient un token.
+   - **Claude.ai (web)** : ajoute l'URL comme *custom connector* → l'OAuth se déclenche automatiquement (pas de champ token).
+   - **Claude Desktop / Cursor** : via `mcp-remote` (il gère l'OAuth tout seul, ouvre le navigateur).
+   - **opencode** : `"type": "remote"` + `"url"` (option OAuth du client).
+3. L'IA découvre les 3 outils (**`second_brain_ask`**, **`second_brain_add`**, **`second_brain_project_details`**) — argument `input`/`query`.
 
 ### Sécurité
 
@@ -205,7 +207,7 @@ Retour { ok, repo, path, content }
 |---|---|---|---|
 | **Ollama** | ollamaApi | ✅ Existe | Embeddings locaux (base URL `http://ollama:11434`) |
 | **OpenCode Go** | httpBearerAuth (« Bearer Auth account 2 ») | ✅ Existe | Génération (chat) — clé `opencode-go` |
-| **MCP Second Brain** | httpBearerAuth | ✅ Existe | Auth du serveur MCP dédié |
+| ~~**MCP Second Brain**~~ | httpBearerAuth | ⛔ Inutilisée | Ancien token statique — remplacé par **OAuth n8n** |
 | Header Auth account | httpHeaderAuth | ✅ Existe | Auth webhook Ask (header `n8n-webhook-secret`) |
 | **GitHub token** | httpBearerAuth (« Bearer Auth account ») | ✅ Existe — **Contents: Read + Write** | Lecture (ingestion) + écriture (second_brain_add) |
 | **Github Read** | httpBearerAuth (token **classic**, scope `repo`) | ✅ Existe | Lecture seule multi-repos (outil `project_details`) |

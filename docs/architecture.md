@@ -57,7 +57,7 @@
               └──────────────┘
 ```
 
-**Une IA (ChatGPT, Claude, Cursor, opencode…) se branche via MCP** sur le serveur dédié (`/mcp/second-brain-kb`, bearer auth) et découvre 3 outils :
+**Une IA (ChatGPT, Claude, Cursor, opencode…) se branche via MCP** sur le serveur dédié (`/mcp/second-brain-kb`, **OAuth n8n**) et découvre 3 outils :
 - `second_brain_ask` — lire (RAG complet avec sources) ;
 - `second_brain_add` — écrire une note en **quarantaine** (`status: pending`), validée par l'utilisateur avant indexation ;
 - `second_brain_project_details` — plonger dans la **source** d'un projet (README ou fichier précis sur GitHub), à la demande.

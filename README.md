@@ -81,7 +81,7 @@ sam-second-brain/
 1. **Qdrant** : le lancer sur le VPS — `docker compose -f infrastructure/docker/docker-compose.yml up -d`
 2. **Vault** : ouvrir `sam-second-brain-vault/` dans Obsidian ; les modifications sont pushées sur le repo **privé** `sam-second-brain-vault`.
 3. **n8n** : les 7 workflows sont déjà créés et actifs (Ingestion, Ask, KB Query, Add Note, MCP Server, Housekeeping, Project Details). Les credentials nécessaires : Ollama, OpenCode Go, GitHub fine-grained (Contents: Read+Write sur le vault), GitHub classic « Github Read » (lecture multi-repos), Qdrant, MCP Second Brain, Header Auth — voir `n8n/workflows/README.md`.
-4. **Brancher une IA** : ajouter un serveur MCP avec l'URL `https://n8n.samensteeve.com/mcp/second-brain-kb` + le token Bearer → l'IA découvre `second_brain_ask`, `second_brain_add` et `second_brain_project_details`.
+4. **Brancher une IA** : ajouter un serveur MCP avec l'URL `https://n8n.samensteeve.com/mcp/second-brain-kb` (auth **OAuth n8n**, auto-découverte `.well-known`) → l'IA découvre `second_brain_ask`, `second_brain_add` et `second_brain_project_details`.
 
 ## Décisions d'ingénierie
 
