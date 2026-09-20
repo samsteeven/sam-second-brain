@@ -102,6 +102,23 @@ Second Brain — KB Query   Second Brain — Add Note
   - `second_brain_add` — ajoute une note markdown dans le vault privé avec `status: pending`, auto-classée (type/tags/dossier), dédupliquée. **Elle n'est indexée qu'après validation humaine**. Arguments : `input` (contenu markdown).
   - `second_brain_project_details` — **plonge dans la source** d'un projet (GitHub) : README ou fichier précis, à la demande. Format de `input` : `repo` ou `repo#chemin` (ex. `tribunejustice#app/Services/Payment/EscrowService.php`). Aliases connus : tribunejustice, easypharma, second-brain, sigge, digitrans, portfolio, services, portfolio-adonisjs, taskmanager… ou un `owner/repo` complet.
   - ⚠️ **Credential « Github Read »** : token **classic** (scope `repo`) utilisé par `second_brain_project_details` pour lire TOUS les repos accessibles (tes repos + ceux où tu es contributeur : TBJ org, ngomade/sigge…). Les fine-grained tokens ne couvrent pas les repos personnels d'autres comptes.
+
+## 🔒 Matrice des credentials GitHub (audit)
+
+**Règle d'or : `Github Read` (token classic, capable d'écrire) n'est JAMAIS utilisé sur une écriture.**
+
+| Workflow | Nœud | Méthode | Credential |
+|---|---|---|---|
+| Second Brain — Project Details | GitHub — Détail | GET (lecture) | **Github Read** |
+| Second Brain — Project Details | GitHub — Racine | GET (lecture) | **Github Read** |
+| Second Brain — Add Note | GitHub — Créer la note | PUT (**écriture**) | Bearer Auth account (fine-grained, vault uniquement) |
+| Second Brain — Housekeeping | GitHub — Arbre / Contenu / Écrire le rapport | GET + PUT (**écriture** du rapport) | Bearer Auth account (fine-grained, vault uniquement) |
+| Second Brain — Ingestion | GitHub — Arbre / Contenu | GET (lecture) | Bearer Auth account (fine-grained) |
+
+Garanties :
+- `Github Read` n'est branché que sur les 2 nœuds **GET** de l'outil de lecture.
+- Les écritures utilisent **exclusivement** la fine-grained « Bearer Auth account », limitée à `sam-second-brain-vault` (Contenus: Read + Write sur ce repo seulement).
+- Les URLs d'écriture sont codées en dur vers `samsteeven/sam-second-brain-vault` → impossible d'écrire ailleurs.
 - **Workflow MCP** : https://n8n.samensteeve.com/workflow/vsiodb4KRTTEVBju
 - **Sous-workflows** : KB Query (`dWn9Dm1dvc5Qi13H`) · Add Note (`0M0WNrS3KtBYrD3U`)
 - **URL MCP (production)** : `https://n8n.samensteeve.com/mcp/second-brain-kb`
