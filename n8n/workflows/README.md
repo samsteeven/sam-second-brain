@@ -99,7 +99,9 @@ Second Brain — KB Query   Second Brain — Add Note
 
 - **Outils** :
   - `second_brain_ask` — répond depuis la base (projets, stack, CV, notes) avec sources.
-  - `second_brain_add` — ajoute une note markdown dans `99-Capture/` du vault privé avec `status: pending`. **Elle n'est indexée qu'après validation humaine** (passe le statut à `active`). Arguments : `input` (contenu markdown), `title` (optionnel).
+  - `second_brain_add` — ajoute une note markdown dans le vault privé avec `status: pending`, auto-classée (type/tags/dossier), dédupliquée. **Elle n'est indexée qu'après validation humaine**. Arguments : `input` (contenu markdown).
+  - `second_brain_project_details` — **plonge dans la source** d'un projet (GitHub) : README ou fichier précis, à la demande. Format de `input` : `repo` ou `repo#chemin` (ex. `tribunejustice#app/Services/Payment/EscrowService.php`). Aliases connus : tribunejustice, easypharma, second-brain, sigge, digitrans, portfolio, services, portfolio-adonisjs, taskmanager… ou un `owner/repo` complet.
+  - ⚠️ **Token GitHub** : pour lire les **repos privés** autres que `sam-second-brain-vault`, il faut **étendre le fine-grained token** (Contents: Read sur ces repos). Les repos publics fonctionnent sans changement.
 - **Workflow MCP** : https://n8n.samensteeve.com/workflow/vsiodb4KRTTEVBju
 - **Sous-workflows** : KB Query (`dWn9Dm1dvc5Qi13H`) · Add Note (`0M0WNrS3KtBYrD3U`)
 - **URL MCP (production)** : `https://n8n.samensteeve.com/mcp/second-brain-kb`
