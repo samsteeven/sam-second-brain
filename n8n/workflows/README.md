@@ -34,11 +34,11 @@ Code — Construire les points { id, vector, payload:{content, metadata} }
 HTTP — Qdrant Upsert (PUT /points?wait=true)
         │
         ▼
-HTTP — Qdrant Nettoyage orphelins (must_not has_id)
+HTTP — Qdrant Nettoyage orphelins (must_not has_id + indexed_at < runStart)
 ```
 
 - **Workflow** : https://n8n.samensteeve.com/workflow/OW8VnLftG984yErF
-- **Principe** : **upsert à IDs déterministes** → **idempotent** (deux exécutions concurrentes produisent le même index, sans doublon). Le nettoyage des orphelins gère les notes supprimées/raccourcies. Aucun vidage de collection → pas de fenêtre où la base est vide.
+- **Principe** : **upsert à IDs déterministes** → **idempotent** (deux exécutions concurrentes produisent le même index, sans doublon). Chaque point est horodaté (`indexed_at`) ; le nettoyage des orphelins ne supprime que les points **antérieurs au début du run** (`indexed_at < runStart`) → un run concurrent avec une vue périmée ne peut **jamais** supprimer les notes écrites par un autre. Aucun vidage de collection → pas de fenêtre où la base est vide.
 - **Quarantaine** : les notes écrites par une IA (`second_brain_add`) arrivent avec `status: pending` → **jamais indexées** tant que tu ne les valides pas (passe `status` à `active` dans Obsidian/GitHub, ou supprime-les).
 - **Vault** : repo **privé** `samsteeven/sam-second-brain-vault` — aucune donnée publique.
 

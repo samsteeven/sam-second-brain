@@ -82,7 +82,7 @@
      }
    }
    ```
-7. **Nettoyage des orphelins** : suppression des points dont l'ID n'est plus dans le lot courant (`filter.must_not[].has_id`) → gère les notes supprimées ou raccourcies.
+7. **Nettoyage des orphelins** : suppression des points dont l'ID n'est plus dans le lot courant (`must_not has_id`) **et** antérieurs au début du run (`indexed_at < runStart`). Gère les notes supprimées/raccourcies, sans jamais toucher aux points écrits par un run concurrent.
 8. **Idempotence** : grâce aux IDs déterministes, **deux exécutions concurrentes produisent le même index** (aucun doublon). Aucun vidage de collection → pas de fenêtre où la base est vide.
 
 ## Flux de question (Workflow 2)

@@ -71,6 +71,6 @@ Le projet est documenté en **français**. Garder le ton factuel, sans emphase n
 
 ## 8. Pièges connus (vérifiés)
 
-- **Ingestion** : elle utilise des **IDs de points déterministes** (hash `fichier + index de chunk`) + un **nettoyage des orphelins** → **idempotente** (deux runs concurrents = même index, zéro doublon). Ne jamais revenir au schéma « vider puis réinsérer ».
+- **Ingestion** : elle utilise des **IDs de points déterministes** (hash `fichier + index de chunk`) + un **nettoyage des orphelins horodaté** (`indexed_at < runStart`) → **idempotente et sans perte** même avec des exécutions concurrentes. Ne jamais revenir au schéma « vider puis réinsérer », ni supprimer des points sans le garde-fou temporel.
 - **Noms trompeurs** : ne jamais nommer un composant d'après une marque qu'il n'utilise pas (voir §3).
 - **Workflows en double/archivés** : l'instance n8n contient des doublons archivés — **toujours vérifier `active`/`isArchived`** avant de considérer un workflow comme actif.
