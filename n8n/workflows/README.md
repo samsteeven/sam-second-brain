@@ -13,7 +13,7 @@ Schedule Trigger (30 min)
 GitHub — Arbre du vault (git trees recursive)
         │
         ▼
-Code — Filtrer les notes .md (hors .obsidian/templates)
+Code — Filtrer les notes .md (hors .obsidian / templates / 99-Capture)
         │
         ▼
 GitHub — Contenu de la note (API, base64)   [un appel par note]

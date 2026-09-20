@@ -68,7 +68,7 @@
 
 1. **Déclencheur** : schedule toutes les 30 min.
 2. **Lecture des notes** : API GitHub (repo **privé** `sam-second-brain-vault`) — arbre git récursif puis contenu de chaque note `.md` (un appel par note, sans boucle).
-3. **Filtre quarantaine** : les notes `status: pending` (écrites par IA, non validées) sont **exclues**.
+3. **Filtre quarantaine** : les notes `status: pending` (écrites par IA, non validées) sont **exclues**. Le dossier `99-Capture/` (rapports, captures) n'est **jamais indexé**.
 4. **Chunking + IDs déterministes** : découpage par sections Markdown (chunks ~800 caractères, recouvrement 100). Chaque chunk reçoit un **ID UUID déterministe** = hash de `fichier + contenu du chunk` → un chunk identique produit toujours le même point, un chunk modifié produit un nouvel ID.
 5. **Différentiel** : on interroge Qdrant pour les IDs **déjà présents** → seuls les chunks **nouveaux ou modifiés** sont embarqués. En régime stable, l'ingestion ne calcule presque rien (**~2 s** au lieu de ~3-6 min).
 6. **Embeddings** : **Ollama `bge-m3`** (1024 dimensions, local sur le VPS), en un appel batch (`POST /api/embed`) — **uniquement pour le delta**.

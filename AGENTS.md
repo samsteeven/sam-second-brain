@@ -46,7 +46,7 @@
 - Le vault vit sur le repo **privé** `samsteeven/sam-second-brain-vault` — **jamais** dans ce repo public.
 - Chaque note a un **frontmatter YAML** (`type`, `status`, `importance`, `tags`).
 - **Une note = un sujet.** Lier avec `[[…]]`.
-- **Écriture par IA = quarantaine** : `status: pending` dans `99-Capture/`, jamais indexée sans validation humaine (ADR-006). Ne jamais écrire une note IA directement en `active`.
+- **Écriture par IA = quarantaine** : `status: pending` dans son dossier classé, jamais indexée sans validation humaine (ADR-006). Ne jamais écrire une note IA directement en `active`. Le dossier **`99-Capture/`** (rapports, captures) n'est **jamais indexé**.
 - Ne pas créer de fichiers parasites (canvas vides, brouillons) : Obsidian en génère parfois — les supprimer.
 
 ## 5. Sécurité
