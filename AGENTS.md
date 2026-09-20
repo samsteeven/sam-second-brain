@@ -68,3 +68,9 @@ Avant de considérer une tâche terminée :
 ## 7. Langue
 
 Le projet est documenté en **français**. Garder le ton factuel, sans emphase ni chiffres non vérifiés.
+
+## 8. Pièges connus (vérifiés)
+
+- **Ingestion concurrente** : le workflow Ingestion « vide puis ré-indexe » → **deux exécutions simultanées dupliquent la base** (observé). Ne jamais lancer un run manuel si un run est déjà en cours. Correctif de fond : IDs de points déterministes (upsert idempotent).
+- **Noms trompeurs** : ne jamais nommer un composant d'après une marque qu'il n'utilise pas (voir §3).
+- **Workflows en double/archivés** : l'instance n8n contient des doublons archivés — **toujours vérifier `active`/`isArchived`** avant de considérer un workflow comme actif.

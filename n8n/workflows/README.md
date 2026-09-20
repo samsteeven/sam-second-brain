@@ -32,6 +32,7 @@ Qdrant — Indexer (chunks 800 / overlap 100 → embeddings Ollama bge-m3 → in
 - **Principe** : ré-indexation complète à chaque run (vide la collection puis re-remplit) → pas de doublons.
 - **Quarantaine** : les notes écrites par une IA (`second_brain_add`) arrivent avec `status: pending` → **jamais indexées** tant que tu ne les valides pas (passe `status` à `active` dans Obsidian/GitHub, ou supprime-les).
 - **Vault** : repo **privé** `samsteeven/sam-second-brain-vault` — aucune donnée publique.
+- ⚠️ **Concurrence (piège connu)** : le workflow **vide la collection puis ré-indexe**. **Deux exécutions simultanées créent des doublons** (cas observé : un run manuel pendant le run planifié → 2× les points). Ne **jamais** lancer d'exécution manuelle si une exécution est déjà en cours (vérifier la liste des exécutions). Correctif robuste envisagé : IDs de points **déterministes** (upsert idempotent) au lieu de « vider + réinsérer ».
 
 ### Flux d'édition (côté toi)
 
