@@ -32,8 +32,11 @@ ADR-002 prévoyait les embeddings via OpenAI `text-embedding-3-small`. Or je n'a
 
 ```bash
 docker run -d --name ollama --network n8n_n8n --restart unless-stopped \
+  -e OLLAMA_KEEP_ALIVE=-1 \
   -v ollama_data:/root/.ollama -p 127.0.0.1:11434:11434 ollama/ollama
 docker exec ollama ollama pull bge-m3
 ```
+
+`OLLAMA_KEEP_ALIVE=-1` garde `bge-m3` chargé en mémoire indéfiniment (évite le rechargement entre les runs).
 
 Credential n8n : type **Ollama**, base URL `http://ollama:11434`.
