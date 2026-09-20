@@ -7,7 +7,7 @@
 ┌─────────────────────────────────────────────────────┐
 │                    OBSIDIAN                         │
 │  00-Dashboard/ 01-Identity/ 02-Career/ 03-Projects/ │
-│  04-Studies/ 05-Skills/ 06-Knowledge/ 99-Archive/   │
+│  04-Studies/ 05-Skills/ 06-Knowledge/ 99-Capture/   │
 └──────────────────────┬──────────────────────────────┘
                        │ Markdown + frontmatter YAML
                        ▼
@@ -33,8 +33,12 @@
 │  │  LLM (OpenCode Go deepseek-v4-flash-vision-exp)   │
 │                                                     │
 │  WORKFLOW 3 — MCP DÉDIÉ                              │
-│  second_brain_ask  → KB Query (RAG)                  │
-│  second_brain_add  → Add Note (écriture quarantaine) │
+│  second_brain_ask            → KB Query (RAG)        │
+│  second_brain_add            → Add Note (quarantaine)│
+│  second_brain_project_details→ Project Details (GitHub)│
+│                                                     │
+│  WORKFLOW 4 — HOUSEKEEPING                           │
+│  Schedule hebdo → similarité → rapport (pending)     │
 └──────────────────────┬──────────────────────────────┘
                        │
                        ▼
@@ -53,9 +57,10 @@
               └──────────────┘
 ```
 
-**Une IA (ChatGPT, Claude, Cursor, opencode…) se branche via MCP** sur le serveur dédié (`/mcp/second-brain-kb`, bearer auth) et découvre 2 outils :
+**Une IA (ChatGPT, Claude, Cursor, opencode…) se branche via MCP** sur le serveur dédié (`/mcp/second-brain-kb`, bearer auth) et découvre 3 outils :
 - `second_brain_ask` — lire (RAG complet avec sources) ;
-- `second_brain_add` — écrire une note en **quarantaine** (`status: pending`), validée par l'utilisateur avant indexation.
+- `second_brain_add` — écrire une note en **quarantaine** (`status: pending`), validée par l'utilisateur avant indexation ;
+- `second_brain_project_details` — plonger dans la **source** d'un projet (README ou fichier précis sur GitHub), à la demande.
 
 **Obsidian = mémoire externe structurée. n8n = moteur d'ingestion + serveur MCP. Qdrant = index sémantique. Ollama = embeddings locaux. OpenCode Go = génération. L'utilisateur valide chaque écriture IA.**
 
@@ -70,18 +75,16 @@
 7. **Upsert Qdrant** : chaque chunk est un point avec :
    ```json
    {
-     "id": "tribunejustice-architecture-03",
      "vector": [0.021, -0.113, ...],
      "payload": {
        "text": "TribuneJustice utilise Laravel...",
        "file": "03-Projects/TribuneJustice.md",
-       "category": "projects",
-       "tags": ["laravel", "angular", "cloud"],
-       "updated_at": "2026-09-19"
+       "category": "project",
+       "tags": "laravel, angular, cloud"
      }
    }
    ```
-6. **Idempotence** : la collection `knowledge_base` est vidée avant chaque ré-indexation → pas de doublons.
+8. **Idempotence** : la collection `knowledge_base` est vidée avant chaque ré-indexation (étape 2) → pas de doublons.
 
 ## Flux de question (Workflow 2)
 
@@ -100,10 +103,11 @@
    ```
 5. **Réponse** : OpenCode Go `deepseek-v4-flash-vision-exp` (`https://opencode.ai/zen/go/v1` + header `x-opencode-session`), température 0.2 (factuel).
 
-## Flux MCP (Workflow 3) — lecture + écriture
+## Flux MCP (Workflow 3) — lecture + écriture + source
 
 - `second_brain_ask` : comme le flux de question, mais exposé comme **outil MCP** (via MCP Server Trigger + Custom Workflow Tool). L'IA appelle l'outil avec une question → réponse + sources.
 - `second_brain_add` : écrit une note markdown dans `99-Capture/` du vault privé avec **`status: pending`** → **quarantaine** (non indexée). L'utilisateur valide (passe à `active`) ou supprime. Voir ADR-006.
+- `second_brain_project_details` : lit un README ou un fichier précis d'un repo GitHub (`repo` ou `repo#chemin`) pour aller chercher la vérité dans la source, sans gonfler le vault.
 
 ## Métadonnées (frontmatter YAML dans Obsidian)
 

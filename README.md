@@ -11,7 +11,7 @@
 ```
 ┌───────────────┐     ┌───────┐     ┌──────────────┐     ┌──────────┐     ┌──────┐
 │   OBSIDIAN    │────▶│  GIT  │────▶│     n8n      │────▶│  QDRANT  │────▶│ LLM  │
-│  source de    │ MD  │version│     │ ingestion /  │ vec │ vector   │ sem │OpenR.│
+│  source de    │ MD  │version│     │ ingestion /  │ vec │ vector   │ sem │OC Go │
 │  vérité       │     │ing    │     │ chunking /   │     │ store    │search     │
 │               │     │       │     │ embeddings   │     │          │     │      │
 └───────────────┘     └───────┘     └──────────────┘     └──────────┘     └──────┘
@@ -23,10 +23,15 @@
 
 **Obsidian = mémoire externe structurée. n8n = moteur d'ingestion et d'orchestration. Qdrant = index sémantique. LLM = intelligence qui interroge la mémoire.**
 
+> `LLM` = **OpenCode Go** (`deepseek-v4-flash-vision-exp`) — voir [ADR-004](docs/decisions/ADR-004-opencode-go-generation.md).
+
 ## V1 — fonctionnalités
 
-- **Ingestion automatique** : les notes Markdown modifiées sont chunkées, embarquées et indexées dans Qdrant.
-- **Question → réponse contextuelle** : une question est traduite en embedding, les chunks pertinents sont retrouvés, et le LLM répond uniquement à partir de ce contexte (RAG).
+- **Ingestion automatique** : les notes Markdown modifiées sont chunkées, embarquées et indexées dans Qdrant (schedule 30 min, notes `pending` exclues).
+- **Question → réponse contextuelle** : une question est traduite en embedding, les chunks pertinents sont retrouvés, et le LLM répond uniquement à partir de ce contexte (RAG), avec les fichiers sources cités.
+- **Serveur MCP dédié** : n'importe quelle IA (ChatGPT, Claude, Cursor, opencode…) branche le serveur et découvre 3 outils — `second_brain_ask`, `second_brain_add`, `second_brain_project_details`.
+- **Écriture contrôlée (quarantaine)** : une IA qui écrit passe par `status: pending` → jamais indexée sans validation humaine (anti prompt-injection). Classification auto (type/tags/dossier) + dédoublonnage sémantique à l'écriture.
+- **Housekeeping hebdomadaire** : rapport des notes redondantes, déposé en quarantaine.
 - **Templates Obsidian** : notes normalisées (profil, projet, compétence, réunion, idée, décision) avec métadonnées YAML pour un filtrage fiable.
 - **Versioning Git** : historique complet du second cerveau.
 
@@ -39,8 +44,8 @@
 | Orchestration | n8n | Workflows visuels, déjà utilisé dans mon écosystème |
 | Vector store | Qdrant (Docker) | Open-source, self-hosted, rapide, métadonnées riches |
 | Embeddings | **Ollama `bge-m3`** (local, VPS) | Multilingue (FR), aucun coût API, notes non envoyées à un tiers |
-| LLM | **OpenRouter `openai/gpt-4.1-mini`** | Réponses rapides et économiques |
-| Interface | Webhook / Chat (n8n) | Simple, extensible (Telegram, WhatsApp…) |
+| LLM | **OpenCode Go — `deepseek-v4-flash-vision-exp`** | Réutilise la clé opencode existante, coût faible (ADR-004) |
+| Interface | **Serveur MCP** (n8n) + webhook Ask | Une IA se branche via MCP ; chat Telegram/WhatsApp à venir |
 
 ## Structure du repo
 
@@ -61,7 +66,7 @@ sam-second-brain/
 │   └── docker/
 │       └── docker-compose.yml   # Qdrant
 ├── n8n/
-│   └── workflows/               # Descriptions des workflows (ingestion + ask)
+│   └── workflows/               # Workflows versionnés (ingestion, ask, add, mcp, housekeeping, project-details)
 ├── obsidian/
 │   ├── templates/               # Templates de notes
 │   └── examples/                # Exemples de notes
@@ -74,8 +79,8 @@ sam-second-brain/
 
 1. **Qdrant** : le lancer sur le VPS — `docker compose -f infrastructure/docker/docker-compose.yml up -d`
 2. **Vault** : ouvrir `sam-second-brain-vault/` dans Obsidian ; les modifications sont pushées sur le repo **privé** `sam-second-brain-vault`.
-3. **n8n** : les workflows sont déjà créés et actifs (Ingestion, KB Query, Add Note, MCP Server). Les credentials nécessaires : Ollama, OpenCode Go, GitHub (Contents: Read+Write), Qdrant, MCP Second Brain — voir `n8n/workflows/README.md`.
-4. **Brancher une IA** : ajouter un serveur MCP avec l'URL `https://n8n.samensteeve.com/mcp/second-brain-kb` + le token Bearer → l'IA découvre `second_brain_ask` et `second_brain_add`.
+3. **n8n** : les 7 workflows sont déjà créés et actifs (Ingestion, Ask, KB Query, Add Note, MCP Server, Housekeeping, Project Details). Les credentials nécessaires : Ollama, OpenCode Go, GitHub fine-grained (Contents: Read+Write sur le vault), GitHub classic « Github Read » (lecture multi-repos), Qdrant, MCP Second Brain, Header Auth — voir `n8n/workflows/README.md`.
+4. **Brancher une IA** : ajouter un serveur MCP avec l'URL `https://n8n.samensteeve.com/mcp/second-brain-kb` + le token Bearer → l'IA découvre `second_brain_ask`, `second_brain_add` et `second_brain_project_details`.
 
 ## Décisions d'ingénierie
 

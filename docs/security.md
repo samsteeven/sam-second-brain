@@ -3,8 +3,8 @@
 ## Principes
 
 1. **Le vault personnel n'est jamais sur un repo public.** Il vit sur le repo **privé** `samsteeven/sam-second-brain-vault` (sync automatique vers Qdrant via n8n). Le repo public `sam-second-brain` ne contient que du code, des templates et de la documentation — **aucune note personnelle**.
-2. **Les secrets ne vont ni dans le repo, ni dans le vault.** La clé OpenRouter, le token GitHub et la credential Qdrant vivent exclusivement dans les credentials n8n.
-3. **Aucune donnée personnelle n'est envoyée ailleurs que nécessaire** : l'indexation (embeddings) se fait **en local sur le VPS via Ollama** — les notes ne quittent pas le serveur. Seul le **contexte des questions** part vers OpenRouter pour la génération. Le token GitHub ne donne accès qu'au repo privé du vault (Contents: Read uniquement).
+2. **Les secrets ne vont ni dans le repo, ni dans le vault.** La clé **OpenCode Go**, les **tokens GitHub** (fine-grained + classic) et la credential Qdrant vivent exclusivement dans les credentials n8n.
+3. **Aucune donnée personnelle n'est envoyée ailleurs que nécessaire** : l'indexation (embeddings) se fait **en local sur le VPS via Ollama** — les notes ne quittent pas le serveur **pour l'indexation**. En revanche, à la **génération**, les **chunks de notes récupérés** (top-K) + la question sont envoyés à **OpenCode Go** pour produire la réponse. Le token GitHub d'écriture (fine-grained) ne donne accès qu'au repo privé du vault (Contents: Read **and Write**).
 
 ## Cartographie des données
 
@@ -12,9 +12,10 @@
 |---|---|---|
 | Note personnelle (vault) | Local + **repo GitHub privé** `sam-second-brain-vault` | Confidentialité — jamais de repo public |
 | Embeddings + textes chunkés | Qdrant (VPS) | Faible (VPS privé) |
-| Clé API OpenRouter | Credential n8n | Critique — ne jamais la mettre en clair |
-| Token GitHub | Credential n8n (Bearer) | Critique — scope limité au repo du vault |
-| Question / réponses | Transit via n8n → OpenRouter | Les questions peuvent contenir des infos perso — à garder en tête |
+| Clé API OpenCode Go | Credential n8n | Critique — ne jamais la mettre en clair |
+| Token GitHub (fine-grained, écriture) | Credential n8n (Bearer) | Critique — scope limité au repo du vault |
+| Token GitHub (classic « Github Read », lecture) | Credential n8n (Bearer) | Critique — lecture de tous les repos accessibles (outil `project_details`) |
+| Question / réponses + chunks récupérés | Transit via n8n → OpenCode Go | Les questions **et les chunks de notes retrouvés** peuvent contenir des infos perso — à garder en tête |
 
 ## Règles concrètes
 

@@ -1,6 +1,6 @@
 # n8n — Workflows
 
-Deux workflows sont créés dans l'instance n8n (https://n8n.samensteeve.com, projet personnel). Le code source de chaque workflow est versionné ici (`.ts`, SDK `@n8n/workflow-sdk`) pour être re-créé/modifié par code.
+Sept workflows sont créés dans l'instance n8n (https://n8n.samensteeve.com, projet personnel). Le code source de chaque workflow est versionné ici (`.ts`, SDK `@n8n/workflow-sdk`) pour être re-créé/modifié par code.
 
 ## Workflow 1 — `Second Brain — Ingestion (GitHub)` ✅
 
@@ -86,15 +86,15 @@ Réponse JSON { answer, sources }
 
 ```
 MCP Server Trigger (mcpTrigger, path: second-brain-kb, bearer auth)
-        │  ai_tool            │  ai_tool
-        ▼                     ▼
-second_brain_ask         second_brain_add
-  (lit la base)            (écrit une note)
-        │                     │
-        ▼                     ▼
-Second Brain — KB Query   Second Brain — Add Note
- question → Ollama →      note markdown → GitHub
- Qdrant → DeepSeek        (99-Capture/) → indexée
+        │ ai_tool              │ ai_tool              │ ai_tool
+        ▼                      ▼                      ▼
+second_brain_ask        second_brain_add      second_brain_project_details
+  (lit la base)           (écrit une note)       (lit la source GitHub)
+        │                      │                      │
+        ▼                      ▼                      ▼
+Second Brain — KB Query  Second Brain — Add Note  Second Brain — Project Details
+ question → Ollama →      note markdown → GitHub    README/fichier GitHub
+ Qdrant → DeepSeek        (99-Capture/, pending)    (repo ou repo#chemin)
 ```
 
 - **Outils** :
@@ -120,7 +120,7 @@ Garanties :
 - Les écritures utilisent **exclusivement** la fine-grained « Bearer Auth account », limitée à `sam-second-brain-vault` (Contenus: Read + Write sur ce repo seulement).
 - Les URLs d'écriture sont codées en dur vers `samsteeven/sam-second-brain-vault` → impossible d'écrire ailleurs.
 - **Workflow MCP** : https://n8n.samensteeve.com/workflow/vsiodb4KRTTEVBju
-- **Sous-workflows** : KB Query (`dWn9Dm1dvc5Qi13H`) · Add Note (`0M0WNrS3KtBYrD3U`)
+- **Sous-workflows** : KB Query (`dWn9Dm1dvc5Qi13H`) · Add Note (`MzpwDShhgx4nte2U`) · Project Details (`CNBjukh9nqhGDPbc`)
 - **URL MCP (production)** : `https://n8n.samensteeve.com/mcp/second-brain-kb`
 - **Auth** : `Bearer <token>` — credential « MCP Second Brain ».
 
@@ -131,11 +131,11 @@ Garanties :
 3. Dans ton IA (ChatGPT / Claude Desktop / Cursor / opencode…) : ajoute un **serveur MCP**
    - URL : `https://n8n.samensteeve.com/mcp/second-brain-kb`
    - Auth : Bearer avec ton token
-4. L'IA découvre l'outil **`second_brain_ask`** (argument `input`/`query`) et interroge ta base de connaissances.
+4. L'IA découvre les 3 outils (**`second_brain_ask`**, **`second_brain_add`**, **`second_brain_project_details`**) — argument `input`/`query` — et interroge ta base de connaissances.
 
 ### Sécurité
 
-- Ce serveur n'expose **que** `second_brain_ask` et `second_brain_add` (pas d'admin n8n).
+- Ce serveur n'expose **que** `second_brain_ask`, `second_brain_add` et `second_brain_project_details` (pas d'admin n8n).
 - Le token est à toi : ne le partage pas (qui l'a = accès à tes notes).
 - **Validation des écritures IA** : `second_brain_add` écrit les notes en `status: pending` (quarantaine) → **jamais indexées** tant que tu ne les passes pas à `active`. Contre les prompt injections et le hors-contexte : le pire qu'une IA puisse faire est d'écrire une note en quarantaine, invisible et réversible (Git).
 
@@ -164,6 +164,26 @@ GitHub — Écrire le rapport → 99-Capture/housekeeping-<date>.md (status: pen
 - **Workflow** : https://n8n.samensteeve.com/workflow/IhNRKZe1WGnBEe5s
 - Le rapport est `status: pending` → **non indexé** ; tu le lis et tu valides/refuses.
 
+## Workflow 5 — `Second Brain — Project Details` ✅ (lecture source à la demande)
+
+**Rôle** : donner à une IA branchée en MCP la capacité de **plonger dans la source** d'un projet (GitHub) — README ou fichier précis — sans stocker tout le code dans le vault.
+
+```
+MCP (second_brain_project_details) / exécution directe
+        │  input = "repo" ou "repo#chemin"
+        ▼
+Normaliser la cible (alias → owner/repo)
+        │
+        ├─ si pas de chemin → GitHub — Racine (liste des fichiers)
+        └─ sinon            → GitHub — Détail (contenu du fichier)
+        ▼
+Retour { ok, repo, path, content }
+```
+
+- **Workflow** : https://n8n.samensteeve.com/workflow/CNBjukh9nqhGDPbc
+- **Aliases connus** : tribunejustice, easypharma (+frontend/flutter), second-brain, sigge, digitrans, portfolio, portfolio-adonisjs, services, taskmanager… ou un `owner/repo` complet.
+- **Credential** : **`Github Read`** (token classic, scope `repo`) — lecture seule, jamais utilisée en écriture (voir la matrice ci-dessous).
+
 ## Qualité du contenu (anti-redondance, anti-mal-classé)
 
 - **`second_brain_add` classe automatiquement** chaque note (type, tags, dossier cible) via une passe LLM (DeepSeek) — `06-Knowledge/…`, `03-Projects/…`, `05-Skills/…` selon le contenu.
@@ -179,6 +199,7 @@ GitHub — Écrire le rapport → 99-Capture/housekeeping-<date>.md (status: pen
 | **MCP Second Brain** | httpBearerAuth | ✅ Existe | Auth du serveur MCP dédié |
 | Header Auth account | httpHeaderAuth | ✅ Existe | Auth webhook Ask (header `n8n-webhook-secret`) |
 | **GitHub token** | httpBearerAuth (« Bearer Auth account ») | ✅ Existe — **Contents: Read + Write** | Lecture (ingestion) + écriture (second_brain_add) |
+| **Github Read** | httpBearerAuth (token **classic**, scope `repo`) | ✅ Existe | Lecture seule multi-repos (outil `project_details`) |
 | **Qdrant account** | qdrantApi | ✅ Existe | Upsert + Search |
 
 > ⚠️ Le token GitHub doit avoir **Contents: Read AND write** sur `sam-second-brain-vault` (nécessaire pour l'outil `second_brain_add`).
@@ -201,7 +222,7 @@ GitHub — Écrire le rapport → 99-Capture/housekeeping-<date>.md (status: pen
 
 ### GitHub token (rappel)
 
-Fine-grained PAT, accès **`sam-second-brain-vault`** en *Contents: Read*. Credential n8n de type *HTTP Bearer Auth*, champ = le token seul (sans `Bearer`).
+Fine-grained PAT, accès **`sam-second-brain-vault`** en *Contents: Read **and Write*** (l'écriture est nécessaire pour `second_brain_add`). Credential n8n de type *HTTP Bearer Auth*, champ = le token seul (sans `Bearer`).
 
 ### Qdrant (rappel)
 

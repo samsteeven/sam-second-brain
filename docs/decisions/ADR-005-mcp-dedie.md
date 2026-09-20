@@ -13,8 +13,9 @@ Construire un **serveur MCP dédié** qui n'expose **que** les outils du second 
 
 ```
 MCP Server Trigger (mcpTrigger, path: second-brain-kb, bearer auth)
-  ├─ second_brain_ask  → sous-workflow KB Query (RAG : Ollama → Qdrant → OpenCode Go)
-  └─ second_brain_add  → sous-workflow Add Note (écriture quarantaine → GitHub)
+  ├─ second_brain_ask             → sous-workflow KB Query (RAG : Ollama → Qdrant → OpenCode Go)
+  ├─ second_brain_add             → sous-workflow Add Note (écriture quarantaine → GitHub)
+  └─ second_brain_project_details → sous-workflow Project Details (lecture source GitHub)
 ```
 
 - URL production : `https://n8n.samensteeve.com/mcp/second-brain-kb`
@@ -25,10 +26,10 @@ MCP Server Trigger (mcpTrigger, path: second-brain-kb, bearer auth)
 
 - **Périmètre réduit au strict nécessaire** : lecture + écriture contrôlée, jamais l'admin n8n.
 - **Auth bearer dédiée** : token séparé, révocable (changer la credential).
-- **Séparations des responsabilités** : le serveur MCP (mcpTrigger) délègue à des sous-workflows réutilisables (KB Query, Add Note).
+- **Séparations des responsabilités** : le serveur MCP (mcpTrigger) délègue à des sous-workflows réutilisables (KB Query, Add Note, Project Details).
 
 ## Conséquences
 
-- Un client MCP ne voit que `second_brain_ask` et `second_brain_add`.
+- Un client MCP ne voit que `second_brain_ask`, `second_brain_add` et `second_brain_project_details`.
 - Le token ne doit pas être partagé (accès aux notes personnelles).
 - Toute nouvelle capacité (ex. mise à jour de note) = nouvelle sous-workflow + outil ajouté aux `subnodes.tools` du trigger.

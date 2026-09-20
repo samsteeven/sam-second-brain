@@ -6,6 +6,8 @@ Le vault personnel vit **localement** dans `D:\Documents\sam-second-brain-vault\
 
 ## Arborescence du vault
 
+> Vue **représentative** (le vault réel contient davantage de notes dans chaque dossier).
+
 ```
 sam-second-brain-vault/
 ├── 00-Dashboard/
@@ -22,6 +24,8 @@ sam-second-brain-vault/
 │   ├── TribuneJustice.md
 │   ├── EasyPharma.md
 │   ├── DIGITRANS-CM.md
+│   ├── SIGGE.md
+│   ├── Second-Brain.md
 │   └── Portfolio.md
 ├── 04-Studies/
 │   ├── M2-3iL.md
@@ -36,8 +40,9 @@ sam-second-brain-vault/
 │   ├── Development/
 │   ├── Cloud/
 │   ├── Security/
+│   ├── DevOps/
 │   └── Architecture/
-└── 99-Archive/
+└── 99-Capture/              # notes ajoutées par IA (quarantaine, status: pending)
 ```
 
 ## Règles d'usage
