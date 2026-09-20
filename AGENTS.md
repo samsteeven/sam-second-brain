@@ -71,6 +71,6 @@ Le projet est documenté en **français**. Garder le ton factuel, sans emphase n
 
 ## 8. Pièges connus (vérifiés)
 
-- **Ingestion concurrente** : le workflow Ingestion « vide puis ré-indexe » → **deux exécutions simultanées dupliquent la base** (observé). Ne jamais lancer un run manuel si un run est déjà en cours. Correctif de fond : IDs de points déterministes (upsert idempotent).
+- **Ingestion** : elle utilise des **IDs de points déterministes** (hash `fichier + index de chunk`) + un **nettoyage des orphelins** → **idempotente** (deux runs concurrents = même index, zéro doublon). Ne jamais revenir au schéma « vider puis réinsérer ».
 - **Noms trompeurs** : ne jamais nommer un composant d'après une marque qu'il n'utilise pas (voir §3).
 - **Workflows en double/archivés** : l'instance n8n contient des doublons archivés — **toujours vérifier `active`/`isArchived`** avant de considérer un workflow comme actif.

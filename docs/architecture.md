@@ -67,24 +67,23 @@
 ## Flux d'ingestion (Workflow 1)
 
 1. **Déclencheur** : schedule toutes les 30 min.
-2. **Vidage Qdrant** : la collection `knowledge_base` est vidée à chaque run (anti-doublons).
-3. **Lecture des notes** : API GitHub (repo **privé** `sam-second-brain-vault`) — arbre git récursif puis contenu de chaque note `.md` (un appel par note, sans boucle).
-4. **Filtre quarantaine** : les notes `status: pending` (écrites par IA, non validées) sont **exclues**.
-5. **Chunking** : découpage par sections Markdown (titres `##`) avec recouvrement léger, pour que chaque chunk soit autonome.
-6. **Embeddings** : **Ollama `bge-m3`** (1024 dimensions, exécuté en local sur le VPS).
-7. **Upsert Qdrant** : chaque chunk est un point avec :
+2. **Lecture des notes** : API GitHub (repo **privé** `sam-second-brain-vault`) — arbre git récursif puis contenu de chaque note `.md` (un appel par note, sans boucle).
+3. **Filtre quarantaine** : les notes `status: pending` (écrites par IA, non validées) sont **exclues**.
+4. **Chunking + IDs déterministes** : découpage par sections Markdown (chunks ~800 caractères, recouvrement 100). Chaque chunk reçoit un **ID UUID déterministe** (hash de `fichier + index de chunk`) → le même chunk produit toujours le même point.
+5. **Embeddings** : **Ollama `bge-m3`** (1024 dimensions, local sur le VPS), en un appel batch (`POST /api/embed`).
+6. **Upsert Qdrant** : chaque chunk est *upserté* (insert ou écrasement) :
    ```json
    {
+     "id": "05d62998-92d4-7452-1853-ca0f029943ae",
      "vector": [0.021, -0.113, ...],
      "payload": {
-       "text": "TribuneJustice utilise Laravel...",
-       "file": "03-Projects/TribuneJustice.md",
-       "category": "project",
-       "tags": "laravel, angular, cloud"
+       "content": "TribuneJustice utilise Laravel...",
+       "metadata": { "file": "03-Projects/TribuneJustice.md", "category": "project", "tags": "laravel, angular, cloud" }
      }
    }
    ```
-8. **Idempotence** : la collection `knowledge_base` est vidée avant chaque ré-indexation (étape 2) → pas de doublons.
+7. **Nettoyage des orphelins** : suppression des points dont l'ID n'est plus dans le lot courant (`filter.must_not[].has_id`) → gère les notes supprimées ou raccourcies.
+8. **Idempotence** : grâce aux IDs déterministes, **deux exécutions concurrentes produisent le même index** (aucun doublon). Aucun vidage de collection → pas de fenêtre où la base est vide.
 
 ## Flux de question (Workflow 2)
 

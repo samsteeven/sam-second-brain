@@ -10,9 +10,6 @@ Sept workflows sont créés dans l'instance n8n (https://n8n.samensteeve.com, pr
 Schedule Trigger (30 min)
         │
         ▼
-Qdrant — Vider la collection (knowledge_base)
-        │
-        ▼
 GitHub — Arbre du vault (git trees recursive)
         │
         ▼
@@ -25,14 +22,25 @@ GitHub — Contenu de la note (API, base64)   [un appel par note]
 Code — Décoder + frontmatter (type/tags/status)
         │   ⚠️ exclut les notes `status: pending` (quarantaine)
         ▼
-Qdrant — Indexer (chunks 800 / overlap 100 → embeddings Ollama bge-m3 → insert)
+Code — Chunker + IDs déterministes (UUID = hash fichier + index)
+        │
+        ▼
+HTTP — Ollama /api/embed (bge-m3, batch)
+        │
+        ▼
+Code — Construire les points { id, vector, payload:{content, metadata} }
+        │
+        ▼
+HTTP — Qdrant Upsert (PUT /points?wait=true)
+        │
+        ▼
+HTTP — Qdrant Nettoyage orphelins (must_not has_id)
 ```
 
 - **Workflow** : https://n8n.samensteeve.com/workflow/OW8VnLftG984yErF
-- **Principe** : ré-indexation complète à chaque run (vide la collection puis re-remplit) → pas de doublons.
+- **Principe** : **upsert à IDs déterministes** → **idempotent** (deux exécutions concurrentes produisent le même index, sans doublon). Le nettoyage des orphelins gère les notes supprimées/raccourcies. Aucun vidage de collection → pas de fenêtre où la base est vide.
 - **Quarantaine** : les notes écrites par une IA (`second_brain_add`) arrivent avec `status: pending` → **jamais indexées** tant que tu ne les valides pas (passe `status` à `active` dans Obsidian/GitHub, ou supprime-les).
 - **Vault** : repo **privé** `samsteeven/sam-second-brain-vault` — aucune donnée publique.
-- ⚠️ **Concurrence (piège connu)** : le workflow **vide la collection puis ré-indexe**. **Deux exécutions simultanées créent des doublons** (cas observé : un run manuel pendant le run planifié → 2× les points). Ne **jamais** lancer d'exécution manuelle si une exécution est déjà en cours (vérifier la liste des exécutions). Correctif robuste envisagé : IDs de points **déterministes** (upsert idempotent) au lieu de « vider + réinsérer ».
 
 ### Flux d'édition (côté toi)
 

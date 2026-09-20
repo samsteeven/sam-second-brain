@@ -27,7 +27,7 @@
 
 ## V1 — fonctionnalités
 
-- **Ingestion automatique** : les notes Markdown modifiées sont chunkées, embarquées et indexées dans Qdrant (schedule 30 min, notes `pending` exclues).
+- **Ingestion automatique** : les notes Markdown modifiées sont chunkées, embarquées et indexées dans Qdrant (schedule 30 min, notes `pending` exclues). IDs de points **déterministes** → ingestion **idempotente** (aucun doublon, même en cas d'exécutions concurrentes).
 - **Question → réponse contextuelle** : une question est traduite en embedding, les chunks pertinents sont retrouvés, et le LLM répond uniquement à partir de ce contexte (RAG), avec les fichiers sources cités.
 - **Serveur MCP dédié** : n'importe quelle IA (ChatGPT, Claude, Cursor, opencode…) branche le serveur et découvre 3 outils — `second_brain_ask`, `second_brain_add`, `second_brain_project_details`.
 - **Écriture contrôlée (quarantaine)** : une IA qui écrit passe par `status: pending` → jamais indexée sans validation humaine (anti prompt-injection). Classification auto (type/tags/dossier) + dédoublonnage sémantique à l'écriture.
