@@ -69,21 +69,23 @@
 1. **Déclencheur** : schedule toutes les 30 min.
 2. **Lecture des notes** : API GitHub (repo **privé** `sam-second-brain-vault`) — arbre git récursif puis contenu de chaque note `.md` (un appel par note, sans boucle).
 3. **Filtre quarantaine** : les notes `status: pending` (écrites par IA, non validées) sont **exclues**.
-4. **Chunking + IDs déterministes** : découpage par sections Markdown (chunks ~800 caractères, recouvrement 100). Chaque chunk reçoit un **ID UUID déterministe** (hash de `fichier + index de chunk`) → le même chunk produit toujours le même point.
-5. **Embeddings** : **Ollama `bge-m3`** (1024 dimensions, local sur le VPS), en un appel batch (`POST /api/embed`).
-6. **Upsert Qdrant** : chaque chunk est *upserté* (insert ou écrasement) :
+4. **Chunking + IDs déterministes** : découpage par sections Markdown (chunks ~800 caractères, recouvrement 100). Chaque chunk reçoit un **ID UUID déterministe** = hash de `fichier + contenu du chunk` → un chunk identique produit toujours le même point, un chunk modifié produit un nouvel ID.
+5. **Différentiel** : on interroge Qdrant pour les IDs **déjà présents** → seuls les chunks **nouveaux ou modifiés** sont embarqués. En régime stable, l'ingestion ne calcule presque rien (**~2 s** au lieu de ~3-6 min).
+6. **Embeddings** : **Ollama `bge-m3`** (1024 dimensions, local sur le VPS), en un appel batch (`POST /api/embed`) — **uniquement pour le delta**.
+7. **Upsert Qdrant** : chaque chunk est *upserté* (insert ou écrasement) :
    ```json
    {
      "id": "05d62998-92d4-7452-1853-ca0f029943ae",
      "vector": [0.021, -0.113, ...],
      "payload": {
        "content": "TribuneJustice utilise Laravel...",
-       "metadata": { "file": "03-Projects/TribuneJustice.md", "category": "project", "tags": "laravel, angular, cloud" }
+       "metadata": { "file": "03-Projects/TribuneJustice.md", "category": "project", "tags": "laravel, angular, cloud" },
+       "indexed_at": 1789877894187
      }
    }
    ```
-7. **Nettoyage des orphelins** : suppression des points dont l'ID n'est plus dans le lot courant (`must_not has_id`) **et** antérieurs au début du run (`indexed_at < runStart`). Gère les notes supprimées/raccourcies, sans jamais toucher aux points écrits par un run concurrent.
-8. **Idempotence** : grâce aux IDs déterministes, **deux exécutions concurrentes produisent le même index** (aucun doublon). Aucun vidage de collection → pas de fenêtre où la base est vide.
+8. **Nettoyage des orphelins** : suppression des points dont l'ID n'est plus dans le lot courant (`must_not has_id`) **et** antérieurs au début du run (`indexed_at < runStart`). Gère les notes supprimées/raccourcies, sans jamais toucher aux points écrits par un run concurrent.
+9. **Idempotence** : grâce aux IDs déterministes, **deux exécutions concurrentes produisent le même index** (aucun doublon). Aucun vidage de collection → pas de fenêtre où la base est vide.
 
 ## Flux de question (Workflow 2)
 

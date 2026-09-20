@@ -22,23 +22,33 @@ GitHub — Contenu de la note (API, base64)   [un appel par note]
 Code — Décoder + frontmatter (type/tags/status)
         │   ⚠️ exclut les notes `status: pending` (quarantaine)
         ▼
-Code — Chunker + IDs déterministes (UUID = hash fichier + index)
+Code — Chunker + IDs déterministes (UUID = hash fichier + contenu du chunk)
         │
         ▼
-HTTP — Ollama /api/embed (bge-m3, batch)
+HTTP — Qdrant : IDs déjà présents (POST /points { ids })
         │
         ▼
+Code — Filtrer à embedder (ne garde que les chunks nouveaux/modifiés)
+        │
+        ▼
+If — Rien à embedder ?
+        │ oui ──────────────────────────────┐
+        │ non                               │
+        ▼                                   │
+HTTP — Ollama /api/embed (bge-m3, batch — delta uniquement)
+        │                                   │
+        ▼                                   │
 Code — Construire les points { id, vector, payload:{content, metadata} }
-        │
-        ▼
+        │                                   │
+        ▼                                   │
 HTTP — Qdrant Upsert (PUT /points?wait=true)
-        │
-        ▼
+        │                                   │
+        ▼                                   ▼
 HTTP — Qdrant Nettoyage orphelins (must_not has_id + indexed_at < runStart)
 ```
 
 - **Workflow** : https://n8n.samensteeve.com/workflow/OW8VnLftG984yErF
-- **Principe** : **upsert à IDs déterministes** → **idempotent** (deux exécutions concurrentes produisent le même index, sans doublon). Chaque point est horodaté (`indexed_at`) ; le nettoyage des orphelins ne supprime que les points **antérieurs au début du run** (`indexed_at < runStart`) → un run concurrent avec une vue périmée ne peut **jamais** supprimer les notes écrites par un autre. Aucun vidage de collection → pas de fenêtre où la base est vide.
+- **Principe** : **upsert à IDs déterministes** (hash `fichier + contenu du chunk`) → **idempotent** (deux exécutions concurrentes = même index). **Embeddings différentiels** : seuls les chunks nouveaux/modifiés sont recalculés → **~2 s** en régime stable (au lieu de 3-6 min). Chaque point est horodaté (`indexed_at`) ; le nettoyage des orphelins ne supprime que les points **antérieurs au début du run** (`indexed_at < runStart`) → aucun run ne peut supprimer les notes d'un autre. Aucun vidage de collection.
 - **Quarantaine** : les notes écrites par une IA (`second_brain_add`) arrivent avec `status: pending` → **jamais indexées** tant que tu ne les valides pas (passe `status` à `active` dans Obsidian/GitHub, ou supprime-les).
 - **Vault** : repo **privé** `samsteeven/sam-second-brain-vault` — aucune donnée publique.
 
