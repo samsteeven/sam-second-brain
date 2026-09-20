@@ -57,7 +57,7 @@ const detail = node({
       headerParameters: { parameters: [{ name: 'Accept', value: 'application/vnd.github.raw' }] },
       options: { response: { response: { neverError: true } } },
     },
-    credentials: { httpBearerAuth: newCredential('Bearer Auth account') },
+    credentials: { httpBearerAuth: newCredential('Github Read') },
   },
   output: [{}],
 });
@@ -74,7 +74,7 @@ const root = node({
       genericAuthType: 'httpBearerAuth',
       options: { response: { response: { neverError: true } } },
     },
-    credentials: { httpBearerAuth: newCredential('Bearer Auth account') },
+    credentials: { httpBearerAuth: newCredential('Github Read') },
   },
   output: [{ name: 'README.md', type: 'file', path: 'README.md' }],
 });
