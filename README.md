@@ -52,6 +52,7 @@
 ```
 sam-second-brain/
 ├── README.md
+├── AGENTS.md                    # Règles de cohérence (pour toute IA / contributeur)
 ├── docs/
 │   ├── architecture.md          # Architecture détaillée V1
 │   ├── security.md              # Secrets, confidentialité, isolation
