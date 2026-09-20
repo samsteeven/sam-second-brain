@@ -14,7 +14,7 @@ L'outil MCP `second_brain_add` donne à une IA branchée la capacité d'**écrir
 
 Mettre en place un **sas de validation humaine** par statut :
 
-1. `second_brain_add` écrit les notes dans `99-Capture/` avec **`status: pending`** (frontmatter).
+1. `second_brain_add` écrit la note dans le vault privé, dans son **dossier classé automatiquement** (ex. `06-Knowledge/…`), avec **`status: pending`** (frontmatter).
 2. **L'ingestion ignore les notes `pending`** → jamais indexées, jamais interrogeables par `second_brain_ask`.
 3. **L'utilisateur valide** : dans Obsidian ou GitHub, il relit la note puis soit la **supprime**, soit passe `status: active`.
 4. À l'ingestion suivante, la note validée est indexée.

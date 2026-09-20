@@ -105,7 +105,7 @@
 ## Flux MCP (Workflow 3) — lecture + écriture + source
 
 - `second_brain_ask` : comme le flux de question, mais exposé comme **outil MCP** (via MCP Server Trigger + Custom Workflow Tool). L'IA appelle l'outil avec une question → réponse + sources.
-- `second_brain_add` : écrit une note markdown dans `99-Capture/` du vault privé avec **`status: pending`** → **quarantaine** (non indexée). L'utilisateur valide (passe à `active`) ou supprime. Voir ADR-006.
+- `second_brain_add` : écrit une note markdown dans le vault privé, dans son **dossier classé automatiquement** (ex. `06-Knowledge/…`, `03-Projects/…`, `05-Skills/…`) avec **`status: pending`** → **quarantaine** (non indexée). L'utilisateur valide (passe à `active`) ou supprime. Voir ADR-006.
 - `second_brain_project_details` : lit un README ou un fichier précis d'un repo GitHub (`repo` ou `repo#chemin`) pour aller chercher la vérité dans la source, sans gonfler le vault.
 
 ## Métadonnées (frontmatter YAML dans Obsidian)

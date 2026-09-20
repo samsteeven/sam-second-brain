@@ -42,7 +42,7 @@ sam-second-brain-vault/
 │   ├── Security/
 │   ├── DevOps/
 │   └── Architecture/
-└── 99-Capture/              # notes ajoutées par IA (quarantaine, status: pending)
+└── 99-Capture/              # rapports housekeeping + dépôt de notes IA en quarantaine
 ```
 
 ## Règles d'usage
@@ -55,9 +55,9 @@ sam-second-brain-vault/
 
 ## Validation des notes ajoutées par une IA
 
-Quand une IA branchée au MCP appelle `second_brain_add`, la note arrive dans **`99-Capture/`** avec **`status: pending`**. Elle n'est **jamais indexée** tant que tu ne la valides pas :
+Quand une IA branchée au MCP appelle `second_brain_add`, la note est écrite **directement sur le repo GitHub privé**, dans son **dossier classé automatiquement** (ex. `06-Knowledge/API/2026-09-20-mon-sujet.md`) avec **`status: pending`**. Elle n'est **jamais indexée** tant que tu ne la valides pas :
 
-1. Ouvre la note (`99-Capture/...md`) dans Obsidian (ou GitHub).
+1. Récupère la note : `git pull` dans le vault local (Obsidian), ou ouvre-la sur GitHub.
 2. Lis le contenu :
    - **Si c'est bon** → change `status: pending` en `status: active` → elle sera indexée à l'ingestion suivante.
    - **Si ce n'est pas bon** → supprime la note (ou change `status` en autre chose que `active`).
