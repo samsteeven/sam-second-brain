@@ -69,7 +69,9 @@
 1. **Déclencheur** : schedule toutes les 30 min.
 2. **Lecture des notes** : API GitHub (repo **privé** `sam-second-brain-vault`) — arbre git récursif puis contenu de chaque note `.md` (un appel par note, sans boucle).
 3. **Filtre quarantaine** : les notes `status: pending` (écrites par IA, non validées) sont **exclues**. Le dossier `99-Capture/` (rapports, captures) n'est **jamais indexé**.
-4. **Chunking + IDs déterministes** : découpage par sections Markdown (chunks ~800 caractères, recouvrement 100). Chaque chunk reçoit un **ID UUID déterministe** = hash de `fichier + contenu du chunk` → un chunk identique produit toujours le même point, un chunk modifié produit un nouvel ID.
+4. **Chunking + IDs déterministes** : **un chunk = un titre et son contenu**. Le découpage se fait par sections Markdown, puis chaque chunk est **préfixé par sa source** (`[03-Projects/TribuneJustice.md] TribuneJustice > Rôle`) pour être **autoportant** : un chunk isolé reste compréhensible hors de sa note. Les sections longues sont découpées sur les **paragraphes puis les lignes** (jamais au milieu d'un mot), avec un plafond de ~900 caractères. Chaque chunk reçoit un **ID UUID déterministe** = hash de `fichier + contenu du chunk` → un chunk identique produit toujours le même point, un chunk modifié produit un nouvel ID.
+
+   > **Pourquoi c'est important** : un chunk qui commence au milieu d'une phrase, sans titre, est illisible pour le LLM. Il conclut alors que l'information est « absente » alors qu'elle est dans la note. Le préfixe de source + le découpage par section règlent ce problème.
 5. **Différentiel** : on interroge Qdrant pour les IDs **déjà présents** → seuls les chunks **nouveaux ou modifiés** sont embarqués. En régime stable, l'ingestion ne calcule presque rien (**~2 s** au lieu de ~3-6 min).
 6. **Embeddings** : **Ollama `bge-m3`** (1024 dimensions, local sur le VPS), en un appel batch (`POST /api/embed`) — **uniquement pour le delta**.
 7. **Upsert Qdrant** : chaque chunk est *upserté* (insert ou écrasement) :
@@ -91,7 +93,7 @@
 
 1. **Déclencheur** : Webhook (POST `{ "question": "..." }`) — extensible vers Telegram/WhatsApp.
 2. **Embedding de la question**.
-3. **Recherche sémantique** Qdrant : top-K = 8 chunks, avec éventuel filtre par métadonnées (`category`, `tags`).
+3. **Recherche sémantique** Qdrant : top-K = **12** chunks, avec éventuel filtre par métadonnées (`category`, `tags`).
 4. **Prompt** :
    ```
    SYSTEM :

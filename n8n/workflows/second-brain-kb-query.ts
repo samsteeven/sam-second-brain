@@ -49,7 +49,7 @@ const qdrantSearch = vectorStore({
       mode: 'load',
       qdrantCollection: { __rl: true, mode: 'id', value: 'knowledge_base' },
       prompt: expr('{{ $json.question }}'),
-      topK: 8,
+      topK: 12,
       includeDocumentMetadata: true,
     },
     credentials: { qdrantApi: newCredential('Qdrant account') },

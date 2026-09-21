@@ -22,7 +22,7 @@ GitHub — Contenu de la note (API, base64)   [un appel par note]
 Code — Décoder + frontmatter (type/tags/status)
         │   ⚠️ exclut les notes `status: pending` (quarantaine)
         ▼
-Code — Chunker + IDs déterministes (UUID = hash fichier + contenu du chunk)
+Code — Chunker + IDs déterministes (1 chunk = 1 titre + son contenu, préfixé par `[fichier] Titre > Sous-titre`)
         │
         ▼
 HTTP — Qdrant : IDs déjà présents (POST /points { ids })
@@ -72,7 +72,7 @@ Normaliser la question
 Ollama Embeddings (bge-m3) — embedding de la question
         │
         ▼
-Qdrant Search (topK 8, collection: knowledge_base)
+Qdrant Search (topK 12, collection: knowledge_base)
         │
         ▼
 Contexte + Question (sources citées)
